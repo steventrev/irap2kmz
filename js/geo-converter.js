@@ -546,7 +546,7 @@
         singleColor = '#2563EB',
         lineWidth = 5,
         pointRadius = 1.0,
-        includeExtendedData = true
+        includeExtendedData = false
       } = options;
 
       // Build Styles Map
@@ -582,8 +582,8 @@
       </IconStyle>
       <BalloonStyle>
         <text><![CDATA[
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; max-height: 400px; overflow-y: auto; color: #1e293b;">
-            <h3 style="margin: 0 0 10px 0; color: #0f172a; border-bottom: 2px solid #3b82f6; padding-bottom: 6px;">$[name]</h3>
+          <div style="width: 480px; min-width: 450px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; max-height: 420px; overflow-y: auto; color: #1e293b; padding: 4px;">
+            <h3 style="margin: 0 0 10px 0; color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 6px; font-size: 15px;">$[name]</h3>
             $[description]
           </div>
         ]]></text>
@@ -647,13 +647,13 @@
           if (v === null || v === undefined || v === '') continue;
           rowsHtml.push(`
             <tr style="border-bottom: 1px solid #e2e8f0;">
-              <td style="padding: 4px 8px; font-weight: 600; color: #475569; background-color: #f8fafc; width: 40%; vertical-align: top;">${GeoConverter.escapeXml(k)}</td>
-              <td style="padding: 4px 8px; color: #0f172a; word-break: break-word;">${GeoConverter.escapeXml(v)}</td>
+              <td style="padding: 4px 8px; font-weight: 600; color: #475569; background-color: #f8fafc; width: 38%; vertical-align: top; word-break: break-word;">${GeoConverter.escapeXml(k)}</td>
+              <td style="padding: 4px 8px; color: #0f172a; width: 62%; vertical-align: top; word-break: break-word;">${GeoConverter.escapeXml(v)}</td>
             </tr>`);
         }
 
         const descriptionHtml = `
-          <table style="width: 100%; border-collapse: collapse; font-family: inherit; font-size: 12px; margin-top: 5px;">
+          <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-family: inherit; font-size: 12px; margin-top: 5px;">
             <tbody>
               ${rowsHtml.join('')}
             </tbody>

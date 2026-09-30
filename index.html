@@ -133,7 +133,8 @@
 
         <!-- Demo Option -->
         <div class="geo-demo-wrap">
-          <button id="load-demo-btn" class="btn-builtin-inactive" type="button" title="Load sample iRAP road survey data">
+          <button id="load-demo-btn" class="btn-builtin-inactive" type="button"
+            title="Load sample iRAP road survey data">
             <span class="builtin-btn-left">
               <span class="builtin-btn-icon">⚡</span>
               <span class="builtin-btn-text">Load Demo Road Data</span>
@@ -209,7 +210,8 @@
 
         <!-- 2. Built-in Preset Option -->
         <div class="dict-builtin-wrap">
-          <button id="apply-irap-preset-btn" class="btn-builtin-inactive" type="button" title="Use built-in iRAP dictionary">
+          <button id="apply-irap-preset-btn" class="btn-builtin-inactive" type="button"
+            title="Use built-in iRAP dictionary">
             <span class="builtin-btn-left">
               <span class="builtin-btn-icon">⚡</span>
               <span class="builtin-btn-text">Use Built-in iRAP Dictionary</span>
@@ -266,14 +268,22 @@
           <div class="setting-row" id="row-line-color" style="display: none;">
             <label class="setting-label">Line Color:</label>
             <div class="color-swatch-group" id="line-color-swatches" role="radiogroup" aria-label="Line Color">
-              <button type="button" class="color-swatch active" data-color="#2563EB" title="Blue (Default)" style="--swatch-color: #2563EB;" aria-label="Blue" aria-checked="true" role="radio"></button>
-              <button type="button" class="color-swatch" data-color="#0891B2" title="Cyan" style="--swatch-color: #0891B2;" aria-label="Cyan" aria-checked="false" role="radio"></button>
-              <button type="button" class="color-swatch" data-color="#16A34A" title="Green" style="--swatch-color: #16A34A;" aria-label="Green" aria-checked="false" role="radio"></button>
-              <button type="button" class="color-swatch" data-color="#D97706" title="Amber" style="--swatch-color: #D97706;" aria-label="Amber" aria-checked="false" role="radio"></button>
-              <button type="button" class="color-swatch" data-color="#DC2626" title="Red" style="--swatch-color: #DC2626;" aria-label="Red" aria-checked="false" role="radio"></button>
-              <button type="button" class="color-swatch" data-color="#7C3AED" title="Purple" style="--swatch-color: #7C3AED;" aria-label="Purple" aria-checked="false" role="radio"></button>
-              <button type="button" class="color-swatch" data-color="#FFFFFF" title="White" style="--swatch-color: #FFFFFF;" aria-label="White" aria-checked="false" role="radio"></button>
-              <button type="button" class="color-swatch" data-color="#3F4344" title="ViDA Slate Gray" style="--swatch-color: #3F4344;" aria-label="Slate Gray" aria-checked="false" role="radio"></button>
+              <button type="button" class="color-swatch active" data-color="#2563EB" title="Blue (Default)"
+                style="--swatch-color: #2563EB;" aria-label="Blue" aria-checked="true" role="radio"></button>
+              <button type="button" class="color-swatch" data-color="#0891B2" title="Cyan"
+                style="--swatch-color: #0891B2;" aria-label="Cyan" aria-checked="false" role="radio"></button>
+              <button type="button" class="color-swatch" data-color="#16A34A" title="Green"
+                style="--swatch-color: #16A34A;" aria-label="Green" aria-checked="false" role="radio"></button>
+              <button type="button" class="color-swatch" data-color="#D97706" title="Amber"
+                style="--swatch-color: #D97706;" aria-label="Amber" aria-checked="false" role="radio"></button>
+              <button type="button" class="color-swatch" data-color="#DC2626" title="Red"
+                style="--swatch-color: #DC2626;" aria-label="Red" aria-checked="false" role="radio"></button>
+              <button type="button" class="color-swatch" data-color="#7C3AED" title="Purple"
+                style="--swatch-color: #7C3AED;" aria-label="Purple" aria-checked="false" role="radio"></button>
+              <button type="button" class="color-swatch" data-color="#FFFFFF" title="White"
+                style="--swatch-color: #FFFFFF;" aria-label="White" aria-checked="false" role="radio"></button>
+              <button type="button" class="color-swatch" data-color="#3F4344" title="ViDA Slate Gray"
+                style="--swatch-color: #3F4344;" aria-label="Slate Gray" aria-checked="false" role="radio"></button>
               <label class="color-picker-label" title="Custom color picker">
                 <input type="color" id="input-custom-line-color" value="#2563EB" class="color-picker-input">
                 <span class="color-picker-icon">🎨</span>
@@ -283,9 +293,22 @@
 
           <!-- Geometry Width -->
           <div class="setting-row">
-            <label class="setting-label" for="slider-line-width">Line Width: <span id="label-line-width">5px</span></label>
+            <label class="setting-label" for="slider-line-width">Line Width: <span
+                id="label-line-width">5px</span></label>
             <input type="range" id="slider-line-width" min="1" max="10" value="5" class="form-input"
               style="padding: 0.2rem 0;">
+          </div>
+
+          <!-- ExtendedData / Desktop Formatting Toggle -->
+          <div class="setting-row" style="margin-top: 0.25rem;">
+            <label class="setting-label" for="check-extended-data"
+              style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+              <span>Format for Google Earth Desktop</span>
+              <input type="checkbox" id="check-extended-data"
+                style="width: 1.15rem; height: 1.15rem; cursor: pointer; accent-color: var(--primary);">
+            </label>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Includes raw GIS &lt;ExtendedData&gt;. Leave
+              unchecked for Google Earth Web to prevent duplicate tables.</span>
           </div>
         </div>
       </section>
@@ -320,8 +343,7 @@
             <line x1="10" y1="14" x2="21" y2="3"></line>
           </svg>
         </a>
-        <button id="download-dict-csv-btn" class="btn btn-secondary"
-          title="Download iRAP Coding Dictionary CSV">
+        <button id="download-dict-csv-btn" class="btn btn-secondary" title="Download iRAP Coding Dictionary CSV">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -345,7 +367,8 @@
           <line x1="12" y1="16" x2="12" y2="12"></line>
           <line x1="12" y1="8" x2="12.01" y2="8"></line>
         </svg>
-        <span>In Google Earth (Web), select <strong>File</strong> &gt; <strong>Import File</strong> &gt; <strong>Upload from Device</strong> to load your downloaded KMZ.</span>
+        <span>In Google Earth (Web), select <strong>File</strong> &gt; <strong>Import File</strong> &gt; <strong>Upload
+            from Device</strong> to load your downloaded KMZ.</span>
       </div>
     </section>
 
@@ -366,12 +389,24 @@
         <div id="map-legend"
           style="display: flex; align-items: center; gap: 0.65rem; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap;">
           <span style="font-weight: 600;">ViDA Stars:</span>
-          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #000000; border: 1px solid rgba(255,255,255,0.3); display: inline-block;"></span> 1★</span>
-          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #FF6D00; display: inline-block;"></span> 2★</span>
-          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #FFD600; display: inline-block;"></span> 3★</span>
-          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #84CC16; display: inline-block;"></span> 4★</span>
-          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #00C853; display: inline-block;"></span> 5★</span>
-          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #64748B; display: inline-block;"></span> N/A</span>
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span
+              style="width: 10px; height: 10px; border-radius: 2px; background: #000000; border: 1px solid rgba(255,255,255,0.3); display: inline-block;"></span>
+            1★</span>
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span
+              style="width: 10px; height: 10px; border-radius: 2px; background: #FF6D00; display: inline-block;"></span>
+            2★</span>
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span
+              style="width: 10px; height: 10px; border-radius: 2px; background: #FFD600; display: inline-block;"></span>
+            3★</span>
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span
+              style="width: 10px; height: 10px; border-radius: 2px; background: #84CC16; display: inline-block;"></span>
+            4★</span>
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span
+              style="width: 10px; height: 10px; border-radius: 2px; background: #00C853; display: inline-block;"></span>
+            5★</span>
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem;"><span
+              style="width: 10px; height: 10px; border-radius: 2px; background: #64748B; display: inline-block;"></span>
+            N/A</span>
         </div>
       </div>
 
@@ -380,7 +415,8 @@
         <div id="map-container">
           <!-- Static Map Placeholder Image (Interactive Map Toggleable via app.js) -->
           <div class="map-image-wrapper" id="map-image-wrapper">
-            <img src="img/map_placeholder.jpg" alt="Map Preview Placeholder" class="map-placeholder-img" id="map-placeholder-img">
+            <img src="img/map_placeholder.jpg" alt="Map Preview Placeholder" class="map-placeholder-img"
+              id="map-placeholder-img">
           </div>
           <!-- Leaflet Placeholder Fallback (shown when interactive map enabled before data load) -->
           <div class="map-placeholder" id="map-placeholder" style="display: none;">

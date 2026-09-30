@@ -74,6 +74,28 @@ async function test() {
   console.log('KML Length:', kml.length);
   console.log('KML snippet:\n' + kml.slice(0, 500) + '...\n');
 
+  if (kml.includes('<ExtendedData>')) {
+    throw new Error('Expected default KML to NOT include <ExtendedData>');
+  }
+  if (!kml.includes('width: 480px; min-width: 450px;')) {
+    throw new Error('Expected KML balloon container to include width: 480px; min-width: 450px;');
+  }
+  if (!kml.includes('table-layout: fixed')) {
+    throw new Error('Expected KML description table to use table-layout: fixed');
+  }
+  if (!kml.includes('width: 38%;') || !kml.includes('width: 62%;')) {
+    throw new Error('Expected KML description table to use 38% / 62% column widths');
+  }
+
+  const kmlWithExtended = converter.generateKML({
+    documentName: 'Sample Road Survey',
+    includeExtendedData: true
+  });
+  if (!kmlWithExtended.includes('<ExtendedData>')) {
+    throw new Error('Expected KML with includeExtendedData: true to include <ExtendedData>');
+  }
+  console.log('ExtendedData and Balloon Width tests passed!');
+
   const kmzBuffer = await converter.generateKMZ(kml, true);
   console.log('KMZ Buffer size in bytes:', kmzBuffer.length);
   fs.writeFileSync(path.join(__dirname, 'test_output.kmz'), kmzBuffer);

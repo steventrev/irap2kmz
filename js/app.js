@@ -87,6 +87,7 @@
     inputCustomLineColor: document.getElementById('input-custom-line-color'),
     sliderLineWidth: document.getElementById('slider-line-width'),
     labelLineWidth: document.getElementById('label-line-width'),
+    checkExtendedData: document.getElementById('check-extended-data'),
 
     // Export Section
     exportHeadline: document.getElementById('export-headline'),
@@ -898,7 +899,7 @@
       const starTheme = getSelectedRadioValue('star-theme') || 'vehicle';
       const lineWidth = parseInt(el.sliderLineWidth.value, 10) || 5;
       const titleField = state.converter.detectTitleField();
-      const includeExtendedData = true;
+      const includeExtendedData = el.checkExtendedData ? el.checkExtendedData.checked : false;
 
       const kml = state.converter.generateKML({
         documentName: docName,
@@ -937,7 +938,7 @@
       const starTheme = getSelectedRadioValue('star-theme') || 'vehicle';
       const lineWidth = parseInt(el.sliderLineWidth.value, 10) || 5;
       const titleField = state.converter.detectTitleField();
-      const includeExtendedData = true;
+      const includeExtendedData = el.checkExtendedData ? el.checkExtendedData.checked : false;
 
       const kml = state.converter.generateKML({
         documentName: docName,
