@@ -53,6 +53,9 @@ async function test() {
 
   const replaceStats = converter.applyDictionary(dict);
   console.log('Dictionary replacement stats:', replaceStats);
+  if (!Array.isArray(replaceStats.replacedFields) || replaceStats.replacedFields.length === 0) {
+    throw new Error('Expected replacedFields to be a non-empty array');
+  }
 
   const sampleAfter = converter.featureCollection.features[0].properties;
   console.log('Sample properties AFTER dictionary replacement:');

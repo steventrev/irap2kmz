@@ -420,10 +420,11 @@
      * (GeoJSON is directly converted to KMZ as it already contains full definitions).
      */
     applyDictionary(dataDictionary) {
-      if (!this.featureCollection || !dataDictionary) return { replacements: 0, affectedFeatures: 0 };
+      if (!this.featureCollection || !dataDictionary) return { replacements: 0, affectedFeatures: 0, replacedFields: [] };
 
       let totalReplacements = 0;
       let affectedFeatures = 0;
+      const replacedFields = new Set();
 
       for (const feature of this.featureCollection.features) {
         if (!feature.properties) continue;
@@ -432,13 +433,19 @@
           feature.properties = res.transformed;
           totalReplacements += res.replacementsCount;
           affectedFeatures++;
+          if (res.modifiedFields) {
+            for (const mod of res.modifiedFields) {
+              replacedFields.add(mod.field);
+            }
+          }
         }
       }
 
       return {
         replacements: totalReplacements,
         affectedFeatures: affectedFeatures,
-        totalFeatures: this.featureCollection.features.length
+        totalFeatures: this.featureCollection.features.length,
+        replacedFields: Array.from(replacedFields)
       };
     }
 

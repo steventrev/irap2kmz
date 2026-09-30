@@ -435,7 +435,8 @@
 
     for (const [normField, codeMap] of state.dictionary.fieldCodeMap.entries()) {
       const originalFieldName = state.dictionary.fieldOriginalNames.get(normField) || normField;
-      const isFieldPresentInData = state.replacedFieldsSet.has(originalFieldName);
+      const isFieldPresentInData = state.replacedFieldsSet.has(originalFieldName) ||
+        Array.from(state.replacedFieldsSet).some(f => DataDictionary.normalizeFieldName(f) === normField);
 
       let itemsHtml = '';
       let count = 0;
@@ -623,12 +624,9 @@
     if (state.dictionaryLoaded) {
       const res = state.converter.applyDictionary(state.dictionary);
 
-      // Find which fields were replaced
-      for (const f of state.converter.featureCollection.features) {
-        for (const k of Object.keys(f.properties || {})) {
-          if (state.dictionary.lookup(k, f.properties[k]) !== null) {
-            state.replacedFieldsSet.add(k);
-          }
+      if (res && res.replacedFields) {
+        for (const k of res.replacedFields) {
+          state.replacedFieldsSet.add(k);
         }
       }
 
