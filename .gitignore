@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
-package-lock.json
+
+# Generated test outputs
+scripts/*.kmz
+*.kmz
 
 # Local private testing and sample data
 test/

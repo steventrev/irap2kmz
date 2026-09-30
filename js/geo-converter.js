@@ -52,6 +52,125 @@
     }
 
     /**
+     * Standard ViDA Star Rating color definitions
+     */
+    static STAR_COLORS = Object.freeze({
+      5: '#2C742C', // 5 Stars: ViDA Green
+      4: '#818139', // 4 Stars: ViDA Olive
+      3: '#BE9646', // 3 Stars: ViDA Amber
+      2: '#921D1B', // 2 Stars: ViDA Crimson Red
+      1: '#000000', // 1 Star: ViDA Black
+      na: '#3F4344' // Not applicable: ViDA Slate Gray
+    });
+
+    /**
+     * Target property keys for Star Rating Raw fields by mode
+     */
+    static STAR_THEME_KEYS = Object.freeze({
+      vehicle: ['Vehicle Star Rating Raw', 'vehicle star rating raw'],
+      motorcycle: ['Motorcyclist Star Rating Raw', 'Motorcycle Star Rating Raw', 'motorcyclist star rating raw', 'motorcycle star rating raw'],
+      bicycle: ['Bicyclist Star Rating Raw', 'Bicycle Star Rating Raw', 'bicyclist star rating raw', 'bicycle star rating raw'],
+      pedestrian: ['Pedestrian Star Rating Raw', 'pedestrian star rating raw']
+    });
+
+    /**
+     * Resolve the ViDA Star Rating color for a GeoJSON feature based on the chosen theme.
+     * @param {Object} feature - GeoJSON feature object (or properties object)
+     * @param {string} theme - 'vehicle' | 'motorcycle' | 'bicycle' | 'pedestrian' | 'none'
+     * @param {string} fallbackColor - Hex color to return if no rating or theme is 'none'
+     * @returns {string} Hex color string (#RRGGBB)
+     */
+    static getStarRatingColor(feature, theme = 'vehicle', fallbackColor = '#3F4344') {
+      if (!theme || theme === 'none') return fallbackColor;
+
+      const props = (feature && feature.properties) ? feature.properties : (feature || {});
+      let ratingVal = null;
+
+      const targets = GeoConverter.STAR_THEME_KEYS[theme] || GeoConverter.STAR_THEME_KEYS.vehicle;
+
+      // 1. Exact match
+      for (const target of targets) {
+        if (props[target] !== undefined && props[target] !== null) {
+          ratingVal = props[target];
+          break;
+        }
+      }
+
+      // 2. Normalized key match
+      if (ratingVal === null || ratingVal === undefined) {
+        for (const [k, v] of Object.entries(props)) {
+          const norm = k.toLowerCase().replace(/[\s_]+/g, ' ').trim();
+          if (targets.some(t => t.toLowerCase() === norm)) {
+            ratingVal = v;
+            break;
+          }
+        }
+      }
+
+      // 3. Keyword fuzzy match
+      if (ratingVal === null || ratingVal === undefined) {
+        const kw = theme === 'motorcycle' ? ['motorcycle', 'motorcyclist']
+                 : theme === 'bicycle' ? ['bicycle', 'bicyclist']
+                 : theme === 'pedestrian' ? ['pedestrian']
+                 : ['vehicle'];
+        for (const [k, v] of Object.entries(props)) {
+          const norm = k.toLowerCase().replace(/[\s_]+/g, ' ').trim();
+          if (kw.some(w => norm.includes(w)) && norm.includes('star rating') && norm.includes('raw')) {
+            ratingVal = v;
+            break;
+          }
+        }
+      }
+
+      if (ratingVal !== null && ratingVal !== undefined) {
+        const s = String(ratingVal).toLowerCase().trim();
+        if (s.includes('5 star') || s === '5') return GeoConverter.STAR_COLORS[5];
+        if (s.includes('4 star') || s === '4') return GeoConverter.STAR_COLORS[4];
+        if (s.includes('3 star') || s === '3') return GeoConverter.STAR_COLORS[3];
+        if (s.includes('2 star') || s === '2') return GeoConverter.STAR_COLORS[2];
+        if (s.includes('1 star') || s === '1') return GeoConverter.STAR_COLORS[1];
+        if (s.includes('not applicable') || s.includes('n/a') || s === '0') return GeoConverter.STAR_COLORS.na;
+      }
+
+      return fallbackColor;
+    }
+
+    /**
+     * Inspect a FeatureCollection to determine which Star Rating themes are present.
+     * @param {Object} featureCollection - GeoJSON FeatureCollection
+     * @returns {{ vehicle: boolean, motorcycle: boolean, bicycle: boolean, pedestrian: boolean }}
+     */
+    static detectAvailableStarThemes(featureCollection) {
+      const available = {
+        vehicle: false,
+        motorcycle: false,
+        bicycle: false,
+        pedestrian: false
+      };
+
+      if (!featureCollection || !Array.isArray(featureCollection.features)) {
+        return available;
+      }
+
+      const sampleFeatures = featureCollection.features.slice(0, Math.min(featureCollection.features.length, 50));
+      for (const f of sampleFeatures) {
+        const props = f.properties || {};
+        for (const k of Object.keys(props)) {
+          const norm = k.toLowerCase().replace(/[\s_]+/g, ' ').trim();
+          if ((norm.includes('star rating') && norm.includes('raw')) || norm.endsWith('star rating raw') || norm.includes('star_rating_raw')) {
+            if (norm.includes('vehicle')) available.vehicle = true;
+            if (norm.includes('motorcycle') || norm.includes('motorcyclist')) available.motorcycle = true;
+            if (norm.includes('bicycle') || norm.includes('bicyclist')) available.bicycle = true;
+            if (norm.includes('pedestrian')) available.pedestrian = true;
+          }
+        }
+      }
+
+      return available;
+    }
+
+
+    /**
      * Auto-detect coordinate and geometry columns in CSV headers
      */
     static detectCsvColumns(headers) {
@@ -174,12 +293,13 @@
         throw new Error('Invalid GeoJSON format. Must be FeatureCollection, Feature, or Geometry.');
       }
 
+      // Deep clone original data so dictionary transformations can be reloaded/reapplied idempotently
+      this.originalData = JSON.parse(JSON.stringify(parsed));
       this.featureCollection = {
         type: 'FeatureCollection',
-        features: features
+        features: JSON.parse(JSON.stringify(features))
       };
       this.dataType = 'geojson';
-      this.originalData = parsed;
       this.sourceName = sourceName;
 
       return this.getDataSummary();
@@ -236,13 +356,22 @@
           const lon2 = parseFloat(row[mapping.endLonCol]);
 
           if (!isNaN(lat1) && !isNaN(lon1) && !isNaN(lat2) && !isNaN(lon2)) {
-            geometry = {
-              type: 'LineString',
-              coordinates: [
-                [lon1, lat1],
-                [lon2, lat2]
-              ]
-            };
+            // Safeguard: If start and end coordinates are identical, fallback to Point
+            // to prevent zero-length LineStrings which cause Google Earth coordinate errors
+            if (lat1 === lat2 && lon1 === lon2) {
+              geometry = {
+                type: 'Point',
+                coordinates: [lon1, lat1]
+              };
+            } else {
+              geometry = {
+                type: 'LineString',
+                coordinates: [
+                  [lon1, lat1],
+                  [lon2, lat2]
+                ]
+              };
+            }
           } else if (!isNaN(lat1) && !isNaN(lon1)) {
             // Fallback to point if end is missing
             geometry = {
@@ -293,17 +422,6 @@
     applyDictionary(dataDictionary) {
       if (!this.featureCollection || !dataDictionary) return { replacements: 0, affectedFeatures: 0 };
 
-      // Disable data dictionary replacement for GeoJSON files
-      if (this.dataType === 'geojson') {
-        return {
-          replacements: 0,
-          affectedFeatures: 0,
-          totalFeatures: this.featureCollection.features.length,
-          skipped: true,
-          reason: 'Data dictionary replacement is disabled for GeoJSON files.'
-        };
-      }
-
       let totalReplacements = 0;
       let affectedFeatures = 0;
 
@@ -346,6 +464,7 @@
 
       return keys[0] || null;
     }
+
 
     /**
      * Extract bounding box [minLon, minLat, maxLon, maxLat]
@@ -468,31 +587,6 @@
         return styleId;
       };
 
-      // iRAP Vehicle Star Rating color resolver
-      const getIrapStarColor = (feature) => {
-        const props = feature.properties || {};
-        let ratingVal = props['Vehicle Star Rating Raw'];
-        if (ratingVal === undefined || ratingVal === null) {
-          for (const [k, v] of Object.entries(props)) {
-            const norm = k.toLowerCase().replace(/[\s_]+/g, ' ').trim();
-            if (norm === 'vehicle star rating raw') {
-              ratingVal = v;
-              break;
-            }
-          }
-        }
-
-        if (ratingVal !== null && ratingVal !== undefined) {
-          const s = String(ratingVal).toLowerCase().trim();
-          if (s.includes('5 star') || s === '5') return '#43A047'; // Green
-          if (s.includes('4 star') || s === '4') return '#FDD835'; // Yellow
-          if (s.includes('3 star') || s === '3') return '#FB8C00'; // Orange
-          if (s.includes('2 star') || s === '2') return '#E53935'; // Red
-          if (s.includes('1 star') || s === '1') return '#212121'; // Black
-        }
-        return singleColor;
-      };
-
       // Categorical color palette generator
       const categoricalPalette = [
         '#2563EB', '#7C3AED', '#DB2777', '#EA580C', '#16A34A',
@@ -530,9 +624,12 @@
 
         // Determine style color
         let featureColor = singleColor;
-        if (colorMode === 'irap_stars') {
-          featureColor = getIrapStarColor(feature);
-        } else if (colorMode === 'categorical' && colorField) {
+        const normalizedMode = (colorMode === 'irap_stars' || !colorMode) ? 'vehicle' : colorMode;
+        if (['vehicle', 'motorcycle', 'bicycle', 'pedestrian'].includes(normalizedMode)) {
+          featureColor = GeoConverter.getStarRatingColor(feature, normalizedMode, singleColor);
+        } else if (normalizedMode === 'none') {
+          featureColor = singleColor;
+        } else if (normalizedMode === 'categorical' && colorField) {
           featureColor = getCategoricalColor(props[colorField]);
         }
         const styleId = getStyleIdForColor(featureColor);
@@ -618,19 +715,39 @@ ${placemarks.join('\n')}
         <coordinates>${coordString(geom.coordinates)}</coordinates>
       </Point>`;
 
-        case 'LineString':
+        case 'LineString': {
+          const coords = geom.coordinates || [];
+          // Safeguard: Google Earth requires at least two distinct points for LineString
+          const hasTwoUnique = coords.length >= 2 && coords.some((c, i) =>
+            i > 0 && (c[0] !== coords[0][0] || c[1] !== coords[0][1])
+          );
+          if (!hasTwoUnique && coords.length > 0) {
+            return `<Point>
+        <coordinates>${coordString(coords[0])}</coordinates>
+      </Point>`;
+          }
           return `<LineString>
         <tessellate>1</tessellate>
-        <coordinates>${lineCoordString(geom.coordinates)}</coordinates>
+        <coordinates>${lineCoordString(coords)}</coordinates>
       </LineString>`;
+        }
 
         case 'MultiLineString':
           return `<MultiGeometry>
-        ${geom.coordinates.map(line => `
-        <LineString>
+        ${(geom.coordinates || []).map(line => {
+          const hasTwoUnique = line.length >= 2 && line.some((c, i) =>
+            i > 0 && (c[0] !== line[0][0] || c[1] !== line[0][1])
+          );
+          if (!hasTwoUnique && line.length > 0) {
+            return `<Point>
+          <coordinates>${coordString(line[0])}</coordinates>
+        </Point>`;
+          }
+          return `<LineString>
           <tessellate>1</tessellate>
           <coordinates>${lineCoordString(line)}</coordinates>
-        </LineString>`).join('\n')}
+        </LineString>`;
+        }).join('\n')}
       </MultiGeometry>`;
 
         case 'Polygon':

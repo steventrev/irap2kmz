@@ -12,24 +12,30 @@ const GeoConverter = require('../js/geo-converter.js');
 async function test() {
   console.log('--- TEST 1: Load Data Dictionary ---');
   const dict = new DataDictionary();
-  const findFile = (name) => {
+  const findFile = (name, sampleName) => {
+    if (sampleName) {
+      const pSample = path.join(__dirname, '..', 'sample-data', sampleName);
+      if (fs.existsSync(pSample)) return pSample;
+    }
+    const p0 = path.join(__dirname, '..', 'sample-data', name);
+    if (fs.existsSync(p0)) return p0;
     const p1 = path.join(__dirname, '..', 'test-data', name);
     if (fs.existsSync(p1)) return p1;
     const p2 = path.join(__dirname, '..', name);
     if (fs.existsSync(p2)) return p2;
-    return p1;
+    return p0;
   };
 
   const dictCsv = fs.readFileSync(findFile('irap_data_dictionary.csv'), 'utf8');
   const dictSummary = dict.loadFromCSV(dictCsv, 'irap_data_dictionary.csv');
   console.log('Dict Summary:', dictSummary);
 
-  console.log('\n--- TEST 2: Convert CSV (Catawba Core Data) with Dictionary Replacement ---');
-  const csvFile = findFile('Catawba Core Data - Before - inc End-GPS.csv');
+  console.log('\n--- TEST 2: Convert CSV (Sample Road Survey) with Dictionary Replacement ---');
+  const csvFile = findFile('Catawba Core Data - Before - inc End-GPS.csv', 'sample_road_survey.csv');
   const csvContent = fs.readFileSync(csvFile, 'utf8');
 
   const converter = new GeoConverter();
-  const csvSummary = converter.loadCSV(csvContent, 'Catawba Core Data');
+  const csvSummary = converter.loadCSV(csvContent, 'Sample Road Survey');
   console.log('CSV Summary:', {
     featureCount: csvSummary.featureCount,
     geometryTypes: csvSummary.geometryTypes,
@@ -59,7 +65,7 @@ async function test() {
 
   console.log('\n--- TEST 3: Generate KML and KMZ ---');
   const kml = converter.generateKML({
-    documentName: 'Catawba Road Survey',
+    documentName: 'Sample Road Survey',
     colorMode: 'irap_stars'
   });
   console.log('KML Length:', kml.length);
@@ -71,7 +77,7 @@ async function test() {
   console.log('Successfully wrote test_output.kmz!');
 
   console.log('\n--- TEST 4: Convert GeoJSON directly to KMZ (dictionary replacement disabled) ---');
-  const geojsonFile = findFile('assetmapper-risk-attributes-231.geojson');
+  const geojsonFile = findFile('assetmapper-risk-attributes-231.geojson', 'sample_risk_attributes.geojson');
   const geojsonContent = fs.readFileSync(geojsonFile, 'utf8');
 
   const geoConverter2 = new GeoConverter();
@@ -90,8 +96,30 @@ async function test() {
   const kmzBuffer2 = await geoConverter2.generateKMZ(kml2, true);
   console.log('GeoJSON KMZ Buffer size in bytes:', kmzBuffer2.length);
 
+  console.log('\n--- TEST 5: Star Rating Color & Theme Detection ---');
+  const testFeature5 = {
+    properties: { 'Vehicle Star Rating Raw': '5 star' }
+  };
+  const testFeature1 = {
+    properties: { 'Vehicle Star Rating Raw': '1' }
+  };
+  const color5 = GeoConverter.getStarRatingColor(testFeature5, 'vehicle');
+  const color1 = GeoConverter.getStarRatingColor(testFeature1, 'vehicle');
+  console.log('Resolved 5 star color:', color5, '(expected #2C742C)');
+  console.log('Resolved 1 star color:', color1, '(expected #000000)');
+  if (color5 !== '#2C742C' || color1 !== '#000000') {
+    throw new Error('Star rating color resolution test failed');
+  }
+
+  const themes = GeoConverter.detectAvailableStarThemes(converter.featureCollection);
+  console.log('Detected themes in sample road survey:', themes);
+  if (!themes.vehicle) {
+    throw new Error('Expected sample road survey to have vehicle star rating theme');
+  }
+
   console.log('\nALL TESTS PASSED!');
 }
+
 
 test().catch(err => {
   console.error('Test failed:', err);

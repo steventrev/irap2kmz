@@ -1,0 +1,47 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-80.8948, 34.8961],
+          [-80.8938, 34.8963]
+        ]
+      },
+      "properties": {
+        "Road name": "Demo Corridor",
+        "Section": "Segment 101",
+        "Median type": "Centre line",
+        "Road condition": "Good",
+        "Area type": "Rural",
+        "Vehicle Star Rating Raw": "5 Star",
+        "Motorcyclist Star Rating Raw": "4 Star",
+        "Pedestrian Star Rating Raw": "3 Star",
+        "Bicyclist Star Rating Raw": "4 Star"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-80.8938, 34.8963],
+          [-80.8928, 34.8965]
+        ]
+      },
+      "properties": {
+        "Road name": "Demo Corridor",
+        "Section": "Segment 102",
+        "Median type": "Safety barrier - metal",
+        "Road condition": "Medium",
+        "Area type": "Rural",
+        "Vehicle Star Rating Raw": "4 Star",
+        "Motorcyclist Star Rating Raw": "3 Star",
+        "Pedestrian Star Rating Raw": "2 Star",
+        "Bicyclist Star Rating Raw": "3 Star"
+      }
+    }
+  ]
+}

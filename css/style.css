@@ -183,26 +183,16 @@ body {
   gap: 1.5rem;
 }
 
-/* Sample Bar */
+/* Sample / Action Bar */
 .sample-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   flex-wrap: wrap;
   gap: 0.75rem;
-  padding: 0.75rem 1.25rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  font-size: 0.85rem;
-}
-
-.sample-bar-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--text-muted);
-  font-weight: 500;
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 
 .sample-buttons {
@@ -269,6 +259,115 @@ body {
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-top: -0.4rem;
+}
+
+/* Card Divider (OR) */
+.card-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 0.15rem 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.card-divider::before,
+.card-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-divider span {
+  padding: 0 0.65rem;
+  color: var(--text-subtle);
+}
+
+/* Built-in Preset & Demo Buttons */
+.dict-builtin-wrap,
+.geo-demo-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.btn-builtin-active {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.15);
+}
+
+.btn-builtin-active:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: var(--primary);
+  box-shadow: 0 0 18px var(--primary-glow);
+}
+
+.btn-builtin-inactive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-builtin-inactive:hover {
+  border-color: var(--border-color-hover);
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.builtin-btn-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.builtin-btn-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.builtin-btn-text {
+  font-weight: 600;
+}
+
+.builtin-btn-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: white;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.btn-builtin-inactive .builtin-btn-badge {
+  display: none;
 }
 
 /* Dropzone */
@@ -421,6 +520,89 @@ body {
   font-weight: 600;
 }
 
+.radio-pill input:disabled + label {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: var(--bg-surface);
+  border-color: var(--border-color);
+  color: var(--text-subtle);
+  box-shadow: none;
+}
+
+/* Line Color Swatches (for 'None' Star Rating Theme) */
+.color-swatch-group {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.25rem 0;
+}
+
+.color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: var(--swatch-color);
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  position: relative;
+  outline: none;
+}
+
+.color-swatch[data-color="#FFFFFF"] {
+  border: 1px solid rgba(150, 150, 150, 0.4);
+}
+
+.color-swatch:hover {
+  transform: scale(1.18);
+}
+
+.color-swatch.active {
+  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--primary);
+  transform: scale(1.12);
+}
+
+.color-swatch:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--primary);
+}
+
+.color-picker-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bg-surface-elevated);
+  border: 1px dashed var(--border-color);
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition-fast);
+  margin-left: 0.15rem;
+}
+
+.color-picker-label:hover {
+  border-color: var(--primary);
+  transform: scale(1.15);
+}
+
+.color-picker-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.color-picker-icon {
+  font-size: 0.75rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
 /* Stats Counter Pill */
 .stats-banner {
   display: grid;
@@ -446,6 +628,42 @@ body {
 .stat-label {
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+/* Dict Stats Summary Note */
+.dict-stats-note {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 0.9rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  transition: all var(--transition-fast);
+}
+
+.dict-stats-note strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.dict-stats-note.has-replacements {
+  background: rgba(6, 182, 212, 0.08);
+  border-color: rgba(6, 182, 212, 0.35);
+  color: var(--text-main);
+}
+
+.dict-stats-note.has-replacements strong {
+  color: var(--accent);
+}
+
+.dict-summary-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 /* Action Buttons */
@@ -525,6 +743,43 @@ body {
   border-radius: var(--radius-lg);
 }
 
+/* Export Section & Google Earth Instructions */
+.export-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.export-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.earth-instructions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.earth-instructions svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.earth-instructions strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
 /* Visualization & Map Area */
 .preview-section {
   display: flex;
@@ -595,11 +850,39 @@ body {
   border: 1px solid var(--border-color);
   position: relative;
   z-index: 10;
+  background-color: #f1f5f9;
 }
 
-/* Dark mode filter for fallback tile providers (e.g. OpenStreetMap) */
+/* Light Grayscale Cartographic Tile Filter (Applied to both light & dark modes) */
+.map-tiles-grayscale,
+.osm-grayscale-tiles,
 .osm-dark-tiles {
-  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+  filter: grayscale(100%) contrast(92%) brightness(103%);
+  -webkit-filter: grayscale(100%) contrast(92%) brightness(103%);
+}
+
+/* Map Image Placeholder */
+.map-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 520px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-elevated);
+}
+
+.map-placeholder-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  opacity: 0.85;
+}
+
+[data-theme="dark"] .map-placeholder-img {
+  filter: invert(90%) hue-rotate(180deg) brightness(80%) contrast(90%);
+  opacity: 0.8;
 }
 
 .map-placeholder {
@@ -747,15 +1030,18 @@ body {
 }
 
 .diff-from {
-  color: var(--danger);
+  color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  text-decoration: line-through;
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-width: 20px;
 }
 
 .diff-to {
   color: var(--success);
   font-weight: 500;
+  text-align: right;
+  word-break: break-word;
 }
 
 /* Export Bar */

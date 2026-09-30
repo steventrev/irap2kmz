@@ -1,12 +1,20 @@
 {
   "name": "irap2kmz",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Convert ViDA iRAP geospatial data (CSV/GeoJSON) to KMZ with intelligent data dictionary translation.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npx --yes serve .",
+    "dev": "npx --yes serve .",
+    "test": "node scripts/test_conversion.js",
+    "build:dict": "node scripts/build_dictionary.js"
   },
-  "keywords": [],
+  "keywords": [
+    "irap",
+    "kmz",
+    "kml",
+    "geojson",
+    "geospatial"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

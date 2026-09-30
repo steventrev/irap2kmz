@@ -1,0 +1,5 @@
+Road name,Section,Latitude,Longitude,End Latitude,End Longitude,Median type,Road condition,Area type,Roadside severity - driver-side object,Vehicle Star Rating Raw,Motorcyclist Star Rating Raw,Pedestrian Star Rating Raw,Bicyclist Star Rating Raw
+Demo Corridor,Segment 101,34.8961,-80.8948,34.8963,-80.8938,11,1,1,13,5,4,3,4
+Demo Corridor,Segment 102,34.8963,-80.8938,34.8965,-80.8928,1,2,1,12,4,3,2,3
+Northway Ave,Segment 103,34.8965,-80.8928,34.8969,-80.8918,11,3,2,13,2,2,1,2
+Northway Ave,Segment 104,34.8969,-80.8918,34.8976,-80.8910,11,1,2,11,1,1,2,1

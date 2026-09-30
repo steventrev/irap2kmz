@@ -453,6 +453,7 @@ const dictionaryData = [
     'Pedestrian Star Rating Policy Target',
     'Bicycle Star Rating Policy Target'
   ].flatMap(item => [
+    { item, code: 0, category: 'Not applicable' },
     { item, code: 1, category: '1 Star' },
     { item, code: 2, category: '2 Star' },
     { item, code: 3, category: '3 Star' },

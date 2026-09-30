@@ -4,13 +4,22 @@
 (function () {
   'use strict';
 
+  // =========================================================================
+  // Feature Flag: Interactive Leaflet Map Preview
+  // Set to `true` to re-enable the interactive Leaflet map preview at any time.
+  // Set to `false` to display the static map placeholder image.
+  // =========================================================================
+  const ENABLE_INTERACTIVE_MAP = false;
+
   // Application State
   const state = {
     converter: new GeoConverter(),
     dictionary: new DataDictionary(),
     dictionaryLoaded: false,
+    dictionaryType: null,
     geoLoaded: false,
     activeTab: 'map',
+    interactiveMapEnabled: ENABLE_INTERACTIVE_MAP,
     map: null,
     mapLayerGroup: null,
     currentRows: [],
@@ -18,7 +27,9 @@
     tableHeaders: [],
     currentPage: 1,
     pageSize: 50,
-    replacedFieldsSet: new Set()
+    replacedFieldsSet: new Set(),
+    exportBaseName: 'geospatial_export',
+    selectedLineColor: '#3F4344'
   };
 
   // DOM Elements Cache
@@ -30,9 +41,11 @@
 
     // Demo & Quick Actions
     loadDemoBtn: document.getElementById('load-demo-btn'),
+    geoDemoBadge: document.getElementById('geo-demo-badge'),
     downloadDictCsvBtn: document.getElementById('download-dict-csv-btn'),
     footerDictLink: document.getElementById('footer-dict-link'),
     applyIrapPresetBtn: document.getElementById('apply-irap-preset-btn'),
+    dictBuiltinBadge: document.getElementById('dict-builtin-badge'),
 
     // Step 1: Geo
     geoDropzone: document.getElementById('geo-dropzone'),
@@ -64,22 +77,16 @@
     selectDictField: document.getElementById('select-dict-field'),
     selectDictCode: document.getElementById('select-dict-code'),
     selectDictDesc: document.getElementById('select-dict-desc'),
-    dictStats: document.getElementById('dict-stats'),
-    statDictEntries: document.getElementById('stat-dict-entries'),
-    statDictFields: document.getElementById('stat-dict-fields'),
-    statDictReplacements: document.getElementById('stat-dict-replacements'),
+    dictStatsSummary: document.getElementById('dict-stats-summary'),
+    dictStatsText: document.getElementById('dict-stats-text'),
 
     // Step 3: KMZ Styling
-    selectTitleField: document.getElementById('select-title-field'),
-    colorRadios: document.querySelectorAll('input[name="color-mode"]'),
-    wrapCategoricalField: document.getElementById('wrap-categorical-field'),
-    selectColorField: document.getElementById('select-color-field'),
-    wrapSingleColor: document.getElementById('wrap-single-color'),
-    inputSingleColor: document.getElementById('input-single-color'),
+    starThemeRadios: document.querySelectorAll('input[name="star-theme"]'),
+    rowLineColor: document.getElementById('row-line-color'),
+    colorSwatches: document.querySelectorAll('.color-swatch'),
+    inputCustomLineColor: document.getElementById('input-custom-line-color'),
     sliderLineWidth: document.getElementById('slider-line-width'),
     labelLineWidth: document.getElementById('label-line-width'),
-    checkExtendedData: document.getElementById('check-extended-data'),
-    inputDocName: document.getElementById('input-doc-name'),
 
     // Export Section
     exportHeadline: document.getElementById('export-headline'),
@@ -87,10 +94,13 @@
     btnDownloadKmz: document.getElementById('btn-download-kmz'),
     btnDownloadKml: document.getElementById('btn-download-kml'),
     btnDownloadGeoJson: document.getElementById('btn-download-geojson'),
+    btnOpenGoogleEarth: document.getElementById('btn-open-google-earth'),
 
-    // Tabs
+    // Tabs & Map Preview
     tabButtons: document.querySelectorAll('.tab-btn'),
     tabContents: document.querySelectorAll('.tab-content'),
+    mapImageWrapper: document.getElementById('map-image-wrapper'),
+    mapPlaceholderImg: document.getElementById('map-placeholder-img'),
     mapPlaceholder: document.getElementById('map-placeholder'),
     mapContainer: document.getElementById('map-container'),
     mapLegend: document.getElementById('map-legend'),
@@ -165,6 +175,15 @@
   let currentTileLayer = null;
 
   function initMap() {
+    if (!state.interactiveMapEnabled) {
+      if (el.mapImageWrapper) el.mapImageWrapper.style.display = 'block';
+      if (el.mapPlaceholder) el.mapPlaceholder.style.display = 'none';
+      if (el.mapLegend) el.mapLegend.style.display = 'none';
+      return;
+    }
+
+    if (el.mapImageWrapper) el.mapImageWrapper.style.display = 'none';
+    if (el.mapLegend) el.mapLegend.style.display = 'flex';
     if (state.map || typeof L === 'undefined') return;
 
     // Remove placeholder
@@ -179,6 +198,28 @@
 
     updateMapTileLayer(document.documentElement.getAttribute('data-theme') || 'dark');
     state.mapLayerGroup = L.layerGroup().addTo(state.map);
+  }
+
+  /**
+   * Helper function to programmatically toggle between placeholder image and interactive Leaflet map
+   */
+  function setInteractiveMapEnabled(enabled) {
+    state.interactiveMapEnabled = Boolean(enabled);
+    if (state.interactiveMapEnabled) {
+      if (el.mapImageWrapper) el.mapImageWrapper.style.display = 'none';
+      if (el.mapLegend) el.mapLegend.style.display = 'flex';
+      initMap();
+      renderMapFeatures();
+      if (state.map) setTimeout(() => state.map.invalidateSize(), 150);
+    } else {
+      if (el.mapImageWrapper) el.mapImageWrapper.style.display = 'block';
+      if (el.mapPlaceholder) el.mapPlaceholder.style.display = 'none';
+      if (el.mapLegend) el.mapLegend.style.display = 'none';
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    window.setInteractiveMapEnabled = setInteractiveMapEnabled;
   }
 
   function getCartoApiKey() {
@@ -200,18 +241,16 @@
     if (!state.map) return;
     if (currentTileLayer) state.map.removeLayer(currentTileLayer);
 
-    const isDark = theme === 'dark';
     const apiKey = getCartoApiKey();
 
     if (apiKey) {
-      const tileUrl = isDark
-        ? `https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${encodeURIComponent(apiKey)}`
-        : `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${encodeURIComponent(apiKey)}`;
-
+      // Use CARTO Positron (light grayscale basemap)
+      const tileUrl = `https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png?key=${encodeURIComponent(apiKey)}`;
       const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
       currentTileLayer = L.tileLayer(tileUrl, {
         maxZoom: 19,
+        className: 'map-tiles-grayscale',
         attribution: attribution
       }).addTo(state.map);
 
@@ -224,17 +263,16 @@
           state.map.removeLayer(currentTileLayer);
           currentTileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            className: isDark ? 'osm-dark-tiles' : '',
+            className: 'map-tiles-grayscale',
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           }).addTo(state.map);
         }
       });
     } else {
-      // Without an API key, CARTO returns watermarked tiles ("API KEY REQUIRED").
-      // Directly load OpenStreetMap to ensure a clean, watermark-free basemap.
+      // Without an API key, load OpenStreetMap with light grayscale filter
       currentTileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        className: isDark ? 'osm-dark-tiles' : '',
+        className: 'map-tiles-grayscale',
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(state.map);
     }
@@ -244,6 +282,7 @@
    * Render Features on Leaflet Map
    */
   function renderMapFeatures() {
+    if (!state.interactiveMapEnabled) return;
     if (!state.converter.featureCollection || typeof L === 'undefined') return;
     initMap();
 
@@ -251,59 +290,14 @@
     const fc = state.converter.featureCollection;
     if (!fc.features || fc.features.length === 0) return;
 
-    const colorMode = getSelectedRadioValue('color-mode');
-    const colorField = el.selectColorField.value;
-    const singleColor = el.inputSingleColor.value;
+    const starTheme = getSelectedRadioValue('star-theme') || 'vehicle';
+    const singleColor = state.selectedLineColor || '#3F4344';
     const lineWidth = parseInt(el.sliderLineWidth.value, 10) || 4;
 
-    const starColorMap = {
-      '5 star': '#43A047', '5': '#43A047',
-      '4 star': '#FDD835', '4': '#FDD835',
-      '3 star': '#FB8C00', '3': '#FB8C00',
-      '2 star': '#E53935', '2': '#E53935',
-      '1 star': '#212121', '1': '#212121'
-    };
+    const getFeatureColor = (feature) => GeoConverter.getStarRatingColor(feature, starTheme, singleColor);
 
-    const catPalette = ['#2563EB', '#7C3AED', '#DB2777', '#EA580C', '#16A34A', '#0891B2', '#4F46E5', '#9333EA', '#D97706', '#059669'];
-    const catMap = new Map();
-    let catIdx = 0;
 
-    const getFeatureColor = (feature) => {
-      const props = feature.properties || {};
-
-      if (colorMode === 'irap_stars') {
-        let ratingVal = props['Vehicle Star Rating Raw'];
-        if (ratingVal === undefined || ratingVal === null) {
-          for (const [k, v] of Object.entries(props)) {
-            const norm = k.toLowerCase().replace(/[\s_]+/g, ' ').trim();
-            if (norm === 'vehicle star rating raw') {
-              ratingVal = v;
-              break;
-            }
-          }
-        }
-        if (ratingVal !== null && ratingVal !== undefined) {
-          const s = String(ratingVal).toLowerCase().trim();
-          for (const [starKey, col] of Object.entries(starColorMap)) {
-            if (s.includes(starKey)) return col;
-          }
-        }
-        return singleColor;
-      }
-
-      if (colorMode === 'categorical' && colorField && props[colorField] !== undefined) {
-        const val = String(props[colorField]);
-        if (!catMap.has(val)) {
-          catMap.set(val, catPalette[catIdx % catPalette.length]);
-          catIdx++;
-        }
-        return catMap.get(val);
-      }
-
-      return singleColor;
-    };
-
-    const titleField = el.selectTitleField.value || state.converter.detectTitleField();
+    const titleField = state.converter.detectTitleField();
 
     const geoJsonLayer = L.geoJSON(fc, {
       style: (feature) => {
@@ -363,8 +357,8 @@
       state.map.fitBounds(bounds, { padding: [25, 25], maxZoom: 16 });
     }
 
-    // Toggle legend visibility based on color mode
-    el.mapLegend.style.display = colorMode === 'irap_stars' ? 'flex' : 'none';
+    // Toggle legend visibility based on star theme
+    el.mapLegend.style.display = starTheme !== 'none' ? 'flex' : 'none';
   }
 
   /**
@@ -452,7 +446,7 @@
         }
         itemsHtml += `
           <div class="diff-item">
-            <span class="diff-from">Code ${code}</span>
+            <span class="diff-from">${code}</span>
             <span class="diff-to">→ ${GeoConverter.escapeXml(desc)}</span>
           </div>`;
         count++;
@@ -506,32 +500,101 @@
   }
 
   /**
-   * Update Placemark Title and Color Attribute Dropdowns
+   * Update Attribute Selectors and Star Rating Theme Availability
    */
   function updateAttributeSelectors() {
-    if (!state.converter.featureCollection) return;
-    const features = state.converter.featureCollection.features || [];
-    if (features.length === 0) return;
+    updateStarRatingThemeAvailability();
+  }
 
-    const sampleProps = Object.keys(features[0].properties || {});
-    const autoTitle = state.converter.detectTitleField();
+  /**
+   * Update Star Rating Theme Radio Availability based on dataset properties
+   */
+  function updateStarRatingThemeAvailability() {
+    const themeRadios = {
+      vehicle: document.getElementById('theme-vehicle'),
+      motorcycle: document.getElementById('theme-motorcycle'),
+      bicycle: document.getElementById('theme-bicycle'),
+      pedestrian: document.getElementById('theme-pedestrian'),
+      none: document.getElementById('theme-none')
+    };
 
-    let titleOptions = '<option value="">(Auto-detect: ' + (autoTitle || 'Feature #') + ')</option>';
-    let colorOptions = '<option value="">(Select attribute)</option>';
+    if (!themeRadios.vehicle || !themeRadios.none) return;
 
-    for (const p of sampleProps) {
-      titleOptions += `<option value="${GeoConverter.escapeXml(p)}">${GeoConverter.escapeXml(p)}</option>`;
-      colorOptions += `<option value="${GeoConverter.escapeXml(p)}">${GeoConverter.escapeXml(p)}</option>`;
+    const fc = state.converter.featureCollection;
+    if (!state.geoLoaded || !fc || !fc.features || fc.features.length === 0) {
+      themeRadios.vehicle.disabled = false;
+      themeRadios.motorcycle.disabled = false;
+      themeRadios.bicycle.disabled = false;
+      themeRadios.pedestrian.disabled = false;
+      themeRadios.none.disabled = false;
+      themeRadios.vehicle.checked = true;
+      return;
     }
 
-    el.selectTitleField.innerHTML = titleOptions;
-    el.selectColorField.innerHTML = colorOptions;
+    // Inspect properties of features to find available Star Rating Raw fields
+    const availableThemes = GeoConverter.detectAvailableStarThemes(fc);
 
-    // Pick reasonable default for color attribute (e.g. Star Rating or Speed limit)
-    const starCandidate = sampleProps.find(p => p.toLowerCase().includes('star rating') || p.toLowerCase().includes('section') || p.toLowerCase().includes('road'));
-    if (starCandidate) {
-      el.selectColorField.value = starCandidate;
+    const hasAnyRaw = availableThemes.vehicle || availableThemes.motorcycle || availableThemes.bicycle || availableThemes.pedestrian;
+
+    if (!hasAnyRaw) {
+      // If no "Star Rating Raw" field is available, the buttons should be disabled except for "None".
+      themeRadios.vehicle.disabled = true;
+      themeRadios.motorcycle.disabled = true;
+      themeRadios.bicycle.disabled = true;
+      themeRadios.pedestrian.disabled = true;
+      themeRadios.none.disabled = false;
+      themeRadios.none.checked = true;
+    } else {
+      themeRadios.vehicle.disabled = !availableThemes.vehicle;
+      themeRadios.motorcycle.disabled = !availableThemes.motorcycle;
+      themeRadios.bicycle.disabled = !availableThemes.bicycle;
+      themeRadios.pedestrian.disabled = !availableThemes.pedestrian;
+      themeRadios.none.disabled = false;
+
+      // "Vehicle should be selected by default."
+      if (availableThemes.vehicle) {
+        themeRadios.vehicle.checked = true;
+      } else {
+        const currentSelected = getSelectedRadioValue('star-theme');
+        if (!availableThemes[currentSelected]) {
+          const firstAvailable = ['motorcycle', 'bicycle', 'pedestrian'].find(t => availableThemes[t]);
+          if (firstAvailable) {
+            themeRadios[firstAvailable].checked = true;
+          } else {
+            themeRadios.none.checked = true;
+          }
+        }
+      }
     }
+    updateLineColorVisibility();
+  }
+
+  /**
+   * Update Line Color visibility based on selected star theme
+   */
+  function updateLineColorVisibility() {
+    const starTheme = getSelectedRadioValue('star-theme') || 'vehicle';
+    if (el.rowLineColor) {
+      el.rowLineColor.style.display = starTheme === 'none' ? 'flex' : 'none';
+    }
+  }
+
+  /**
+   * Set active line color for 'none' theme
+   */
+  function setLineColor(colorHex) {
+    state.selectedLineColor = colorHex;
+    if (el.colorSwatches) {
+      el.colorSwatches.forEach(swatch => {
+        const isMatch = swatch.getAttribute('data-color').toLowerCase() === colorHex.toLowerCase();
+        swatch.classList.toggle('active', isMatch);
+        swatch.setAttribute('aria-checked', isMatch ? 'true' : 'false');
+      });
+    }
+    if (el.inputCustomLineColor) {
+      el.inputCustomLineColor.value = colorHex;
+    }
+    renderMapFeatures();
   }
 
   /**
@@ -557,27 +620,8 @@
 
     state.replacedFieldsSet.clear();
 
-    const isGeoJson = state.converter.dataType === 'geojson';
-
-    if (isGeoJson) {
-      // Data dictionary replacement is disabled for GeoJSON files
-      el.statDictReplacements.textContent = 'Bypassed (GeoJSON)';
-      const dictBadge = document.querySelector('#card-dictionary .card-header .version-pill');
-      if (dictBadge) {
-        dictBadge.textContent = 'Bypassed for GeoJSON';
-        dictBadge.style.color = 'var(--text-subtle)';
-        dictBadge.style.borderColor = 'var(--border-color)';
-      }
-    } else if (state.dictionaryLoaded) {
-      const dictBadge = document.querySelector('#card-dictionary .card-header .version-pill');
-      if (dictBadge) {
-        dictBadge.textContent = 'Active (CSV)';
-        dictBadge.style.color = 'var(--success)';
-        dictBadge.style.borderColor = 'rgba(16,185,129,0.4)';
-      }
-
+    if (state.dictionaryLoaded) {
       const res = state.converter.applyDictionary(state.dictionary);
-      el.statDictReplacements.textContent = res.replacements.toLocaleString();
 
       // Find which fields were replaced
       for (const f of state.converter.featureCollection.features) {
@@ -588,15 +632,26 @@
         }
       }
 
-      showToast(`Dictionary applied (${res.replacements.toLocaleString()} updated)`, 'success');
-    } else {
-      const dictBadge = document.querySelector('#card-dictionary .card-header .version-pill');
-      if (dictBadge) {
-        dictBadge.textContent = 'Optional (CSV)';
-        dictBadge.style.color = 'var(--text-muted)';
-        dictBadge.style.borderColor = 'var(--border-color)';
+      const repCount = res.replacements || 0;
+      const fieldCount = state.replacedFieldsSet.size || 0;
+
+      if (el.dictStatsText) {
+        el.dictStatsText.innerHTML = `<strong>${repCount.toLocaleString()}</strong> values replaced across <strong>${fieldCount.toLocaleString()}</strong> fields`;
       }
-      el.statDictReplacements.textContent = '0';
+      if (el.dictStatsSummary) {
+        if (repCount > 0) {
+          el.dictStatsSummary.classList.add('has-replacements');
+        } else {
+          el.dictStatsSummary.classList.remove('has-replacements');
+        }
+      }
+
+      if (state.geoLoaded && res.replacements > 0) {
+        showToast(`Dictionary applied (${res.replacements.toLocaleString()} updated)`, 'success');
+      }
+    } else {
+      if (el.dictStatsText) el.dictStatsText.innerHTML = '<strong>0</strong> values replaced across <strong>0</strong> fields (no dictionary applied)';
+      if (el.dictStatsSummary) el.dictStatsSummary.classList.remove('has-replacements');
     }
 
     updateUI();
@@ -624,21 +679,19 @@
     el.statProperties.textContent = summary.propertyNames.length;
     el.geoStats.style.display = 'grid';
 
-    // Enable Buttons
+    // Enable Export Buttons
     el.btnDownloadKmz.disabled = false;
     el.btnDownloadKml.disabled = false;
     el.btnDownloadGeoJson.disabled = false;
 
+
     // Update Export Card if elements present
     if (el.exportHeadline) {
-      const isGeoJson = state.converter.dataType === 'geojson';
       let dictText = '';
-      if (isGeoJson) {
-        dictText = 'GeoJSON to KMZ direct conversion (dictionary replacement disabled for GeoJSON).';
-      } else if (state.dictionaryLoaded) {
+      if (state.dictionaryLoaded) {
         dictText = `Data dictionary active (${state.dictionary.totalEntriesCount} rules applied).`;
       } else {
-        dictText = 'No data dictionary applied (exporting original CSV values).';
+        dictText = 'No data dictionary applied (exporting original values).';
       }
       el.exportHeadline.textContent = `Ready: ${summary.featureCount} Features (${summary.geometryTypes.join(', ')})`;
       if (el.exportDetails) el.exportDetails.textContent = `${summary.propertyNames.length} attributes detected. ${dictText}`;
@@ -682,10 +735,12 @@
         el.geoFileName.textContent = fileName;
         el.geoDropzone.style.display = 'none';
         el.geoLoadedBanner.style.display = 'flex';
+        if (el.loadDemoBtn) el.loadDemoBtn.className = 'btn-builtin-inactive';
+        if (el.geoDemoBadge) el.geoDemoBadge.style.display = 'none';
 
-        // Suggest clean output name
-        const cleanName = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
-        el.inputDocName.value = cleanName;
+        // Output filename based on input
+        const cleanName = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_') || 'geospatial_export';
+        state.exportBaseName = cleanName;
 
         updateAttributeSelectors();
         reapplyDataDictionary();
@@ -711,10 +766,14 @@
       try {
         const summary = state.dictionary.loadFromCSV(content, fileName);
         state.dictionaryLoaded = true;
+        state.dictionaryType = 'custom';
 
         el.dictFileName.textContent = fileName;
         el.dictDropzone.style.display = 'none';
         el.dictLoadedBanner.style.display = 'flex';
+
+        if (el.applyIrapPresetBtn) el.applyIrapPresetBtn.className = 'btn-builtin-inactive';
+        if (el.dictBuiltinBadge) el.dictBuiltinBadge.style.display = 'none';
 
         // Populate column mapping selectors
         populateDictColSelectors(summary.columnMapping);
@@ -724,6 +783,7 @@
         el.dictStats.style.display = 'grid';
 
         reapplyDataDictionary();
+        showToast(`Loaded ${fileName}`, 'success');
       } catch (err) {
         console.error('Dictionary parse error:', err);
         showToast(`Dictionary error: ${err.message}`, 'error', 5000);
@@ -735,26 +795,54 @@
   /**
    * Apply Built-in iRAP Coding Dictionary
    */
-  function applyBuiltinIrapDictionary() {
+  function applyBuiltinIrapDictionary(isSilent = false) {
     if (typeof window.IRAP_BUILTIN_DICTIONARY === 'undefined') {
-      showToast('Dictionary not loaded', 'error');
+      if (!isSilent) showToast('Dictionary not loaded', 'error');
       return;
     }
 
     const summary = state.dictionary.loadFromEntries(window.IRAP_BUILTIN_DICTIONARY, 'iRAP Coding Manual (Built-in)');
     state.dictionaryLoaded = true;
+    state.dictionaryType = 'builtin';
 
-    el.dictFileName.textContent = 'iRAP Coding Manual QuickGuide (Built-in)';
-    el.dictDropzone.style.display = 'none';
-    el.dictLoadedBanner.style.display = 'flex';
-    el.dictColSettings.style.display = 'none';
+    if (el.dictFileName) el.dictFileName.textContent = 'iRAP Coding Manual QuickGuide (Built-in)';
+    if (el.dictDropzone) el.dictDropzone.style.display = 'block';
+    if (el.dictLoadedBanner) el.dictLoadedBanner.style.display = 'none';
+    if (el.dictColSettings) el.dictColSettings.style.display = 'none';
 
-    el.statDictEntries.textContent = summary.totalEntries.toLocaleString();
-    el.statDictFields.textContent = summary.distinctFields;
-    el.dictStats.style.display = 'grid';
+    if (el.applyIrapPresetBtn) el.applyIrapPresetBtn.className = 'btn-builtin-active';
+    if (el.dictBuiltinBadge) {
+      el.dictBuiltinBadge.style.display = 'inline-block';
+      el.dictBuiltinBadge.textContent = 'Active';
+    }
+
+    if (el.statDictEntries) el.statDictEntries.textContent = summary.totalEntries.toLocaleString();
+    if (el.statDictFields) el.statDictFields.textContent = summary.distinctFields;
+    if (el.dictStats) el.dictStats.style.display = 'grid';
 
     reapplyDataDictionary();
-    showToast('iRAP dictionary loaded', 'success');
+    if (!isSilent) showToast('iRAP dictionary loaded', 'success');
+  }
+
+  /**
+   * Handle Click on Built-in Dictionary Button (Toggle / Re-enable)
+   */
+  function handleBuiltinButtonClick() {
+    if (state.dictionaryLoaded && state.dictionaryType === 'builtin') {
+      // Toggle off dictionary
+      state.dictionary = new DataDictionary();
+      state.dictionaryLoaded = false;
+      state.dictionaryType = null;
+      if (el.applyIrapPresetBtn) el.applyIrapPresetBtn.className = 'btn-builtin-inactive';
+      if (el.dictBuiltinBadge) el.dictBuiltinBadge.style.display = 'none';
+      if (el.dictStatsText) el.dictStatsText.innerHTML = '<strong>0</strong> values replaced across <strong>0</strong> fields (dictionary disabled)';
+      if (el.dictStatsSummary) el.dictStatsSummary.classList.remove('has-replacements');
+      reapplyDataDictionary();
+      showToast('Data dictionary disabled', 'info');
+    } else {
+      if (el.dictFileInput) el.dictFileInput.value = '';
+      applyBuiltinIrapDictionary(false);
+    }
   }
 
   /**
@@ -808,20 +896,17 @@
       el.btnDownloadKmz.disabled = true;
       el.btnDownloadKmz.textContent = 'Packaging KMZ...';
 
-      const docName = el.inputDocName.value.trim() || 'geospatial_export';
-      const colorMode = getSelectedRadioValue('color-mode');
-      const colorField = el.selectColorField.value;
-      const singleColor = el.inputSingleColor.value;
+      const docName = state.exportBaseName || 'geospatial_export';
+      const starTheme = getSelectedRadioValue('star-theme') || 'vehicle';
       const lineWidth = parseInt(el.sliderLineWidth.value, 10) || 4;
-      const titleField = el.selectTitleField.value || state.converter.detectTitleField();
-      const includeExtendedData = el.checkExtendedData.checked;
+      const titleField = state.converter.detectTitleField();
+      const includeExtendedData = true;
 
       const kml = state.converter.generateKML({
         documentName: docName,
         titleField: titleField,
-        colorMode: colorMode,
-        colorField: colorField,
-        singleColor: singleColor,
+        colorMode: starTheme,
+        singleColor: state.selectedLineColor || '#3F4344',
         lineWidth: lineWidth,
         includeExtendedData: includeExtendedData
       });
@@ -850,20 +935,17 @@
     if (!state.converter.featureCollection) return;
 
     try {
-      const docName = el.inputDocName.value.trim() || 'geospatial_export';
-      const colorMode = getSelectedRadioValue('color-mode');
-      const colorField = el.selectColorField.value;
-      const singleColor = el.inputSingleColor.value;
+      const docName = state.exportBaseName || 'geospatial_export';
+      const starTheme = getSelectedRadioValue('star-theme') || 'vehicle';
       const lineWidth = parseInt(el.sliderLineWidth.value, 10) || 4;
-      const titleField = el.selectTitleField.value || state.converter.detectTitleField();
-      const includeExtendedData = el.checkExtendedData.checked;
+      const titleField = state.converter.detectTitleField();
+      const includeExtendedData = true;
 
       const kml = state.converter.generateKML({
         documentName: docName,
         titleField: titleField,
-        colorMode: colorMode,
-        colorField: colorField,
-        singleColor: singleColor,
+        colorMode: starTheme,
+        singleColor: state.selectedLineColor || '#3F4344',
         lineWidth: lineWidth,
         includeExtendedData: includeExtendedData
       });
@@ -879,7 +961,7 @@
   function handleDownloadGeoJson() {
     if (!state.converter.featureCollection) return;
     try {
-      const docName = el.inputDocName.value.trim() || 'geospatial_export';
+      const docName = state.exportBaseName || 'geospatial_export';
       const jsonStr = JSON.stringify(state.converter.featureCollection, null, 2);
       const blob = new Blob([jsonStr], { type: 'application/geo+json;charset=utf-8' });
       triggerDownload(blob, `${docName}_enriched.geojson`);
@@ -888,6 +970,7 @@
       showToast(`GeoJSON export failed: ${err.message}`, 'error');
     }
   }
+
 
   /**
    * Setup Drag and Drop Zone
@@ -928,16 +1011,16 @@
     const demoFeatures = [];
 
     const sampleAttributes = [
-      { speed: 35, median: 11, object: 13, cond: 1, lanes: 1, width: 3, flow: 1, rating: 3 },
-      { speed: 35, median: 11, object: 11, cond: 1, lanes: 1, width: 3, flow: 2, rating: 3 },
+      { speed: 35, median: 11, object: 13, cond: 1, lanes: 1, width: 3, flow: 1, rating: 1 },
       { speed: 35, median: 11, object: 11, cond: 1, lanes: 1, width: 3, flow: 2, rating: 2 },
+      { speed: 35, median: 11, object: 11, cond: 1, lanes: 1, width: 3, flow: 2, rating: 3 },
       { speed: 35, median: 11, object: 12, cond: 1, lanes: 1, width: 1, flow: 1, rating: 4 },
-      { speed: 35, median: 11, object: 11, cond: 2, lanes: 1, width: 1, flow: 1, rating: 4 },
-      { speed: 35, median: 11, object: 11, cond: 1, lanes: 1, width: 1, flow: 3, rating: 3 },
+      { speed: 35, median: 11, object: 11, cond: 2, lanes: 1, width: 1, flow: 1, rating: 5 },
+      { speed: 35, median: 11, object: 11, cond: 1, lanes: 1, width: 1, flow: 3, rating: 0 },
       { speed: 35, median: 11, object: 12, cond: 1, lanes: 1, width: 3, flow: 1, rating: 5 },
-      { speed: 35, median: 11, object: 16, cond: 1, lanes: 1, width: 3, flow: 1, rating: 2 },
+      { speed: 35, median: 11, object: 16, cond: 1, lanes: 1, width: 3, flow: 1, rating: 4 },
       { speed: 35, median: 11, object: 12, cond: 1, lanes: 1, width: 2, flow: 1, rating: 3 },
-      { speed: 35, median: 11, object: 11, cond: 1, lanes: 1, width: 3, flow: 2, rating: 4 }
+      { speed: 35, median: 11, object: 11, cond: 1, lanes: 1, width: 3, flow: 2, rating: 2 }
     ];
 
     for (let i = 0; i < sampleAttributes.length; i++) {
@@ -956,16 +1039,23 @@
           'Road name': 'Indian Trail (Demo Corridor)',
           'Section': `Segment ${436800 + i}`,
           'Distance (km)': (i * 0.1).toFixed(2),
-          'Carriageway': 3,
+          'Carriageway': (i < 6 ? 1 : 2),
           'Speed limit': a.speed,
           'Median type': a.median,
           'Roadside severity - driver-side object': a.object,
           'Road condition': a.cond,
           'Number of lanes': a.lanes,
           'Lane width': a.width,
-          'Area type': 1,
+          'Area type': (i < 7 ? 1 : 2),
           'Pedestrian observed flow across the road': a.flow,
+          'Vehicle Star Rating Raw': a.rating,
           'Vehicle Star Rating Smoothed': a.rating,
+          'Motorcyclist Star Rating Raw': a.rating === 0 ? 0 : Math.max(1, a.rating === 5 ? 4 : (a.rating === 1 ? 1 : a.rating - 1)),
+          'Motorcyclist Star Rating Smoothed': a.rating === 0 ? 0 : Math.max(1, a.rating - 1),
+          'Pedestrian Star Rating Raw': a.rating === 0 ? 0 : Math.min(5, a.rating === 1 ? 2 : a.rating + 1),
+          'Pedestrian Star Rating Smoothed': a.rating === 0 ? 0 : Math.min(5, a.rating + 1),
+          'Bicyclist Star Rating Raw': a.rating,
+          'Bicyclist Star Rating Smoothed': a.rating,
           'Vehicle Occupant Star Rating Policy Target': 3
         }
       });
@@ -984,10 +1074,18 @@
     el.geoDropzone.style.display = 'none';
     el.geoLoadedBanner.style.display = 'flex';
     el.csvGeoSettings.style.display = 'none';
-    el.inputDocName.value = 'Demo_Road_Survey_KMZ';
+    state.exportBaseName = 'iRAPtoKMZ_demo';
 
-    // Also auto-apply the built-in iRAP dictionary
-    applyBuiltinIrapDictionary();
+    if (el.loadDemoBtn) el.loadDemoBtn.className = 'btn-builtin-active';
+    if (el.geoDemoBadge) {
+      el.geoDemoBadge.style.display = 'inline-block';
+      el.geoDemoBadge.textContent = 'Active';
+    }
+
+    // Only apply built-in dictionary if user has previously enabled it
+    if (state.dictionaryLoaded && state.dictionaryType === 'builtin') {
+      applyBuiltinIrapDictionary(true);
+    }
     updateAttributeSelectors();
     showToast('Demo data loaded', 'success');
   }
@@ -1008,7 +1106,8 @@
       rows.push(`${item},${entry.code},${cat}`);
     }
 
-    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+    // Prepend UTF-8 BOM (\uFEFF) so Excel opens UTF-8 without mojibake
+    const blob = new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     triggerDownload(blob, 'irap_data_dictionary.csv');
     showToast('Downloaded dictionary CSV', 'success');
   }
@@ -1028,24 +1127,33 @@
     el.geoRemoveBtn.addEventListener('click', () => {
       state.converter = new GeoConverter();
       state.geoLoaded = false;
+      state.exportBaseName = 'geospatial_export';
       el.geoFileInput.value = '';
       el.geoDropzone.style.display = 'block';
       el.geoLoadedBanner.style.display = 'none';
       el.csvGeoSettings.style.display = 'none';
       el.geoStats.style.display = 'none';
+      if (el.loadDemoBtn) el.loadDemoBtn.className = 'btn-builtin-inactive';
+      if (el.geoDemoBadge) el.geoDemoBadge.style.display = 'none';
       if (state.mapLayerGroup) state.mapLayerGroup.clearLayers();
+      if (el.dictStatsText) el.dictStatsText.innerHTML = '<strong>0</strong> values replaced across <strong>0</strong> fields';
+      if (el.dictStatsSummary) el.dictStatsSummary.classList.remove('has-replacements');
+      updateStarRatingThemeAvailability();
       updateUI();
     });
 
     el.dictRemoveBtn.addEventListener('click', () => {
-      state.dictionary = new DataDictionary();
-      state.dictionaryLoaded = false;
       el.dictFileInput.value = '';
       el.dictDropzone.style.display = 'block';
       el.dictLoadedBanner.style.display = 'none';
       el.dictColSettings.style.display = 'none';
-      el.dictStats.style.display = 'none';
+      state.dictionary = new DataDictionary();
+      state.dictionaryLoaded = false;
+      state.dictionaryType = null;
+      if (el.applyIrapPresetBtn) el.applyIrapPresetBtn.className = 'btn-builtin-inactive';
+      if (el.dictBuiltinBadge) el.dictBuiltinBadge.style.display = 'none';
       reapplyDataDictionary();
+      showToast('Dictionary removed', 'info');
     });
 
     // Demo & Quick Actions
@@ -1062,7 +1170,7 @@
       });
     }
 
-    el.applyIrapPresetBtn.addEventListener('click', applyBuiltinIrapDictionary);
+    el.applyIrapPresetBtn.addEventListener('click', handleBuiltinButtonClick);
 
     // Mode Radio changes
     el.modeRadios.forEach(radio => {
@@ -1077,18 +1185,30 @@
       sel.addEventListener('change', reapplyDataDictionary);
     });
 
-    // Color Mode changes
-    el.colorRadios.forEach(radio => {
+    // Star Rating Theme changes
+    el.starThemeRadios.forEach(radio => {
       radio.addEventListener('change', () => {
-        const val = radio.value;
-        el.wrapCategoricalField.style.display = val === 'categorical' ? 'flex' : 'none';
-        el.wrapSingleColor.style.display = val === 'single' ? 'flex' : 'none';
+        updateLineColorVisibility();
         renderMapFeatures();
       });
     });
 
-    el.selectColorField.addEventListener('change', renderMapFeatures);
-    el.inputSingleColor.addEventListener('input', renderMapFeatures);
+    // Line Color Swatches for 'None' theme
+    if (el.colorSwatches) {
+      el.colorSwatches.forEach(swatch => {
+        swatch.addEventListener('click', () => {
+          const col = swatch.getAttribute('data-color');
+          if (col) setLineColor(col);
+        });
+      });
+    }
+
+    // Custom Line Color Picker
+    if (el.inputCustomLineColor) {
+      el.inputCustomLineColor.addEventListener('input', (e) => {
+        setLineColor(e.target.value);
+      });
+    }
 
     // Line width slider
     el.sliderLineWidth.addEventListener('input', (e) => {
@@ -1111,7 +1231,7 @@
         const targetContent = document.getElementById(targetId);
         if (targetContent) targetContent.classList.add('active');
 
-        if (targetId === 'tab-map' && state.map) {
+        if (targetId === 'tab-map' && state.interactiveMapEnabled && state.map) {
           setTimeout(() => state.map.invalidateSize(), 150);
         }
       });
@@ -1148,11 +1268,17 @@
     el.btnDownloadKmz.addEventListener('click', handleDownloadKmz);
     el.btnDownloadKml.addEventListener('click', handleDownloadKml);
     el.btnDownloadGeoJson.addEventListener('click', handleDownloadGeoJson);
+    if (el.btnOpenGoogleEarth) {
+      el.btnOpenGoogleEarth.addEventListener('click', () => {
+        showToast('In Google Earth: select File > Import File > Upload from Device', 'info', 6000);
+      });
+    }
   }
 
   // Initialize on DOM ready
   document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     initMap();
+    updateStarRatingThemeAvailability();
   });
 })();

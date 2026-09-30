@@ -51,6 +51,9 @@
     static normalizeCode(code) {
       if (code === null || code === undefined) return '';
       let s = String(code).trim();
+      // Repair common ANSI / Windows-1252 mojibake if present
+      s = s.replace(/â‰¥/g, '≥').replace(/â‰¤/g, '≤');
+      s = s.replace(/>=/g, '≥').replace(/<=/g, '≤');
       // If numeric, standardize
       if (!isNaN(s) && s !== '') {
         const num = Number(s);
@@ -175,7 +178,9 @@
     addMapping(item, code, desc) {
       const normField = DataDictionary.normalizeFieldName(item);
       const normCode = DataDictionary.normalizeCode(code);
-      const cleanDesc = String(desc).trim();
+      const cleanDesc = String(desc).trim()
+        .replace(/â‰¥/g, '≥')
+        .replace(/â‰¤/g, '≤');
 
       if (!normField || normCode === '') return;
 

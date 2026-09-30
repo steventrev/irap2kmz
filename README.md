@@ -1,54 +1,24 @@
 # irap2kmz
 
-A client-side webapp that can apply a data dictionary to convert ViDA iRAP exported data (csv/geojson) to a KMZ file. Can optionally apply a data dictionary to convert categorical data to meaningful labels.
+Client-side web app to convert ViDA iRAP geospatial data (CSV / GeoJSON) into styled, human-readable Google Earth KMZ files.
 
-Can be self-hosted or accessed at [https://steventrev.github.io/irap2kmz/](https://steventrev.github.io/irap2kmz/)
-
-AI Disclosure: This project was developed with the assistance of Google's **Gemini 3.8 Flash**.
-
-1. **Inputs Geospatial Data** (`.geojson`, `.json`, or `.csv`):
-   - Automatically detects coordinate columns (Latitude, Longitude) for Points.
-   - Automatically detects Start & End coordinates (e.g. `Latitude`/`Longitude` and `End Latitude`/`End Longitude`) to render **Line Segments** (ideal for road safety surveys such as iRAP 100m segment data).
-   - Also parses WKT (Well-Known Text) geometries.
-2. **Translates Categorical Codes with a Data Dictionary CSV (Optional)**:
-   - Replaces cryptic integer or shorthand codes (e.g., `11` for Median type, `13` for Roadside object, `1` for Road condition) with human-readable definitions (e.g., `Centre line`, `Rigid structure or building`, `Good`).
-   - Includes iRAP-specific dictionary for 1-click application.
-   - Supports custom data dictionaries with flexible column auto-detection and fuzzy attribute matching.
-3. **Exports to Styled Google Earth KMZ / KML**:
-   - Compresses into a `.kmz` file directly in the browser using JSZip.
-   - Generates Google Earth Pro & ArcGIS Earth compatible `<Placemark>` features with clean HTML balloon tables and GIS `<ExtendedData>`.
-   - Thematic styling: iRAP Star Rating color schema, categorical attribute coloring, or custom palette.
-
-
-## 📂 Project Structure
-
-```
-├── index.html                 # Main application UI
-├── css/
-│   └── style.css              # Modern responsive CSS design system (Dark & Light theme)
-├── js/
-│   ├── app.js                 # Main UI controller, map bindings, and export actions
-│   ├── geo-converter.js       # GeoJSON/CSV parsing, coordinate detection & KMZ generator
-│   ├── data-dictionary.js     # Data dictionary parser, normalizer, and code replacer
-│   └── irap-dictionary.js     # Pre-loaded iRAP Quick Coding Guide (541 mappings)
-├── vendor/
-│   ├── jszip.min.js           # Client-side KMZ archive compression
-│   ├── papaparse.min.js       # Fast, robust CSV parser
-│   ├── leaflet.js             # Interactive map preview
-│   ├── leaflet.css            # Leaflet map styling
-│   └── images/                # Leaflet marker assets
-├── test-data/                 # Local private test & sample data (gitignored)
-├── .github/workflows/
-│   └── deploy.yml             # Automatic GitHub Pages deployment workflow
-├── .gitignore                 # Excludes test-data/ and node_modules/
-└── README.md                  # Documentation & usage guide
-```
+🔗 **Live App:** [https://steventrev.github.io/irap2kmz/](https://steventrev.github.io/irap2kmz/)  
+*AI Disclosure: Developed with the assistance of Google's Gemini 3.8 Flash.*
 
 ---
 
-## 🛠️ Data Dictionary Formats
+## ✨ Features
 
-The tool automatically identifies the columns in your dictionary CSV:
+- **Spatial Input:** Supports `.geojson`, `.json`, and `.csv`. Auto-detects Points (Lat/Lon), Line Segments (Start/End coords), and WKT geometries.
+- **Code Translation:** Swaps integer codes (e.g. `11` → `Centre line`) using a 1-click built-in iRAP dictionary or custom CSVs.
+- **KMZ Export:** Generates compressed `.kmz` files with Google Earth HTML balloon tables, GIS `<ExtendedData>`, and thematic styling (iRAP Star Ratings or custom colors).
+
+---
+
+## 🛠️ Data Dictionary Format
+
+Custom dictionaries only require three columns (headers auto-detected):
+
 | Item / Field | Code | Category / Definition |
 | :--- | :--- | :--- |
 | `Median type` | `11` | `Centre line` |
@@ -57,5 +27,56 @@ The tool automatically identifies the columns in your dictionary CSV:
 | `Roadside severity - driver-side object` | `13` | `Rigid structure or building` |
 | `Area type` | `1` | `Rural` |
 
-### Fuzzy Field Matching
-The matcher intelligently normalizes attribute names, so `27 _ Median type`, `Median type (code)`, and `Median Type` all correctly match `Median type`.
+Fuzzy matching automatically aligns field variants like `27 _ Median type` and `Median type (code)` with `Median type`.
+
+
+---
+
+## 💻 Developer Guide
+
+### 🚀 Commands
+
+```bash
+npm install         # Install dependencies
+npm start           # Run local dev server (http://localhost:3000)
+npm test            # Run conversion and unit tests
+npm run build:dict  # Recompile iRAP dictionary from scripts/build_dictionary.js
+```
+
+### 🏗️ Data Pipeline
+
+Client-side only; no backend required.
+
+```mermaid
+flowchart TD
+    A[Input: GeoJSON / CSV] --> B[GeoConverter.loadCSV / loadGeoJSON]
+    B --> C{Geometry Detection}
+    C -->|Lat + Lon| D[Point]
+    C -->|Start + End| E[LineString]
+    C -->|WKT| F[WKT]
+    
+    G[Data Dictionary CSV / Preset] --> H[DataDictionary.loadFromCSV]
+    
+    D & E & F --> I[GeoConverter.applyDictionary]
+    H --> I
+    
+    I --> J[GeoConverter.generateKMZ]
+    J --> K[Thematic Colors + HTML Table]
+    K --> L[JSZip Compression]
+    L --> M[.kmz Download + Map Preview]
+```
+
+### 🧩 Core Modules
+
+| Module | File | Purpose |
+| :--- | :--- | :--- |
+| **GeoConverter** | `js/geo-converter.js` | Parses spatial files, detects coordinates, generates KML/KMZ, and resolves Star Rating colors. |
+| **DataDictionary** | `js/data-dictionary.js` | Fuzzy-matches column names and swaps numeric codes for labels. |
+| **App Controller** | `js/app.js` | UI logic, file upload events, table viewer, and Leaflet preview. |
+| **iRAP Preset** | `js/irap-dictionary.js` | Bundled ViDA lookup definitions (540+ mappings). |
+
+### 🧪 Rules of Thumb
+- **Single Source of Truth:** Keep GIS and color logic in `GeoConverter` (not in `app.js`).
+- **Separation:** Keep DOM logic in `app.js`; data transforms in `geo-converter.js` or `data-dictionary.js`.
+- **Test:** Always run `npm test` before committing.
+

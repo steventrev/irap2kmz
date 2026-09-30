@@ -2410,6 +2410,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
   },
   {
     "item": "Vehicle Star Rating Raw",
+    "code": 0,
+    "category": "Not applicable"
+  },
+  {
+    "item": "Vehicle Star Rating Raw",
     "code": 1,
     "category": "1 Star"
   },
@@ -2435,6 +2440,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
   },
   {
     "item": "Vehicle Star Rating Smoothed",
+    "code": 0,
+    "category": "Not applicable"
+  },
+  {
+    "item": "Vehicle Star Rating Smoothed",
     "code": 1,
     "category": "1 Star"
   },
@@ -2460,6 +2470,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
   },
   {
     "item": "Motorcyclist Star Rating Raw",
+    "code": 0,
+    "category": "Not applicable"
+  },
+  {
+    "item": "Motorcyclist Star Rating Raw",
     "code": 1,
     "category": "1 Star"
   },
@@ -2485,6 +2500,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
   },
   {
     "item": "Motorcyclist Star Rating Smoothed",
+    "code": 0,
+    "category": "Not applicable"
+  },
+  {
+    "item": "Motorcyclist Star Rating Smoothed",
     "code": 1,
     "category": "1 Star"
   },
@@ -2510,6 +2530,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
   },
   {
     "item": "Pedestrian Star Rating Raw",
+    "code": 0,
+    "category": "Not applicable"
+  },
+  {
+    "item": "Pedestrian Star Rating Raw",
     "code": 1,
     "category": "1 Star"
   },
@@ -2535,6 +2560,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
   },
   {
     "item": "Pedestrian Star Rating Smoothed",
+    "code": 0,
+    "category": "Not applicable"
+  },
+  {
+    "item": "Pedestrian Star Rating Smoothed",
     "code": 1,
     "category": "1 Star"
   },
@@ -2560,6 +2590,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
   },
   {
     "item": "Bicyclist Star Rating Raw",
+    "code": 0,
+    "category": "Not applicable"
+  },
+  {
+    "item": "Bicyclist Star Rating Raw",
     "code": 1,
     "category": "1 Star"
   },
@@ -2585,6 +2620,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
   },
   {
     "item": "Bicyclist Star Rating Smoothed",
+    "code": 0,
+    "category": "Not applicable"
+  },
+  {
+    "item": "Bicyclist Star Rating Smoothed",
     "code": 1,
     "category": "1 Star"
   },
@@ -2610,6 +2650,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
   },
   {
     "item": "Vehicle Occupant Star Rating Policy Target",
+    "code": 0,
+    "category": "Not applicable"
+  },
+  {
+    "item": "Vehicle Occupant Star Rating Policy Target",
     "code": 1,
     "category": "1 Star"
   },
@@ -2635,6 +2680,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
   },
   {
     "item": "Motorcycle Star Rating Policy Target",
+    "code": 0,
+    "category": "Not applicable"
+  },
+  {
+    "item": "Motorcycle Star Rating Policy Target",
     "code": 1,
     "category": "1 Star"
   },
@@ -2660,6 +2710,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
   },
   {
     "item": "Pedestrian Star Rating Policy Target",
+    "code": 0,
+    "category": "Not applicable"
+  },
+  {
+    "item": "Pedestrian Star Rating Policy Target",
     "code": 1,
     "category": "1 Star"
   },
@@ -2682,6 +2737,11 @@ window.IRAP_BUILTIN_DICTIONARY = [
     "item": "Pedestrian Star Rating Policy Target",
     "code": 5,
     "category": "5 Star"
+  },
+  {
+    "item": "Bicycle Star Rating Policy Target",
+    "code": 0,
+    "category": "Not applicable"
   },
   {
     "item": "Bicycle Star Rating Policy Target",
