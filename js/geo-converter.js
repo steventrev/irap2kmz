@@ -52,13 +52,13 @@
     }
 
     /**
-     * ViDA Star Rating color definitions (Optimized for high contrast on satellite imagery)
+     * ViDA Star Rating color definitions (Optimized for maximum contrast on satellite imagery)
      */
     static STAR_COLORS = Object.freeze({
-      5: '#22C55E', // 5 Stars: Vivid Green
-      4: '#84CC16', // 4 Stars: Vivid Lime / Yellow-Green
-      3: '#EAB308', // 3 Stars: Vivid Amber / Golden Yellow
-      2: '#F97316', // 2 Stars: Vivid Safety Orange
+      5: '#00C853', // 5 Stars: Vivid Emerald Green (bright against dark forest/terrain)
+      4: '#84CC16', // 4 Stars: Vivid Lime / Yellow-Green (sharp contrast against vegetation)
+      3: '#FFD600', // 3 Stars: Electric Canary Yellow (pure high-visibility yellow; no tan/mustard undertones)
+      2: '#FF6D00', // 2 Stars: Vivid Safety Orange (high contrast against gray asphalt)
       1: '#000000', // 1 Star: ViDA Black
       na: '#64748B' // Not applicable: Slate Gray
     });

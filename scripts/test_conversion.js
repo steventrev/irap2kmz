@@ -114,12 +114,12 @@ async function test() {
   const color3 = GeoConverter.getStarRatingColor(testFeature3, 'vehicle');
   const color2 = GeoConverter.getStarRatingColor(testFeature2, 'vehicle');
   const color1 = GeoConverter.getStarRatingColor(testFeature1, 'vehicle');
-  console.log('Resolved 5 star color:', color5, '(expected #22C55E)');
+  console.log('Resolved 5 star color:', color5, '(expected #00C853)');
   console.log('Resolved 4 star color:', color4, '(expected #84CC16)');
-  console.log('Resolved 3 star color:', color3, '(expected #EAB308)');
-  console.log('Resolved 2 star color:', color2, '(expected #F97316)');
+  console.log('Resolved 3 star color:', color3, '(expected #FFD600)');
+  console.log('Resolved 2 star color:', color2, '(expected #FF6D00)');
   console.log('Resolved 1 star color:', color1, '(expected #000000)');
-  if (color5 !== '#22C55E' || color4 !== '#84CC16' || color3 !== '#EAB308' || color2 !== '#F97316' || color1 !== '#000000') {
+  if (color5 !== '#00C853' || color4 !== '#84CC16' || color3 !== '#FFD600' || color2 !== '#FF6D00' || color1 !== '#000000') {
     throw new Error('Star rating color resolution test failed');
   }
 
