@@ -468,16 +468,17 @@
         return styleId;
       };
 
-      // iRAP Star Rating color resolver
+      // iRAP Vehicle Star Rating color resolver
       const getIrapStarColor = (feature) => {
         const props = feature.properties || {};
-        // Search for star rating fields
-        let ratingVal = null;
-        for (const [k, v] of Object.entries(props)) {
-          const lk = k.toLowerCase();
-          if (lk.includes('star rating') || lk.includes('star_rating')) {
-            ratingVal = v;
-            if (lk.includes('smoothed') || lk.includes('vehicle')) break;
+        let ratingVal = props['Vehicle Star Rating Raw'];
+        if (ratingVal === undefined || ratingVal === null) {
+          for (const [k, v] of Object.entries(props)) {
+            const norm = k.toLowerCase().replace(/[\s_]+/g, ' ').trim();
+            if (norm === 'vehicle star rating raw') {
+              ratingVal = v;
+              break;
+            }
           }
         }
 

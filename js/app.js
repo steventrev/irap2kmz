@@ -272,12 +272,20 @@
       const props = feature.properties || {};
 
       if (colorMode === 'irap_stars') {
-        for (const [k, v] of Object.entries(props)) {
-          if (k.toLowerCase().includes('star rating') || k.toLowerCase().includes('star_rating')) {
-            const s = String(v).toLowerCase().trim();
-            for (const [starKey, col] of Object.entries(starColorMap)) {
-              if (s.includes(starKey)) return col;
+        let ratingVal = props['Vehicle Star Rating Raw'];
+        if (ratingVal === undefined || ratingVal === null) {
+          for (const [k, v] of Object.entries(props)) {
+            const norm = k.toLowerCase().replace(/[\s_]+/g, ' ').trim();
+            if (norm === 'vehicle star rating raw') {
+              ratingVal = v;
+              break;
             }
+          }
+        }
+        if (ratingVal !== null && ratingVal !== undefined) {
+          const s = String(ratingVal).toLowerCase().trim();
+          for (const [starKey, col] of Object.entries(starColorMap)) {
+            if (s.includes(starKey)) return col;
           }
         }
         return singleColor;
@@ -580,7 +588,7 @@
         }
       }
 
-      showToast(`Dictionary applied: ${res.replacements.toLocaleString()} values updated across ${res.affectedFeatures} features!`, 'success');
+      showToast(`Dictionary applied (${res.replacements.toLocaleString()} updated)`, 'success');
     } else {
       const dictBadge = document.querySelector('#card-dictionary .card-header .version-pill');
       if (dictBadge) {
@@ -682,10 +690,10 @@
         updateAttributeSelectors();
         reapplyDataDictionary();
 
-        showToast(`Loaded ${fileName} successfully!`, 'success');
+        showToast(`Loaded ${fileName}`, 'success');
       } catch (err) {
         console.error('Geo file parse error:', err);
-        showToast(`Failed to parse file: ${err.message}`, 'error', 5000);
+        showToast(`Parse failed: ${err.message}`, 'error', 5000);
       }
     };
     reader.readAsText(file);
@@ -718,7 +726,7 @@
         reapplyDataDictionary();
       } catch (err) {
         console.error('Dictionary parse error:', err);
-        showToast(`Error parsing dictionary CSV: ${err.message}`, 'error', 5000);
+        showToast(`Dictionary error: ${err.message}`, 'error', 5000);
       }
     };
     reader.readAsText(file);
@@ -729,7 +737,7 @@
    */
   function applyBuiltinIrapDictionary() {
     if (typeof window.IRAP_BUILTIN_DICTIONARY === 'undefined') {
-      showToast('Built-in iRAP dictionary not loaded.', 'error');
+      showToast('Dictionary not loaded', 'error');
       return;
     }
 
@@ -746,7 +754,7 @@
     el.dictStats.style.display = 'grid';
 
     reapplyDataDictionary();
-    showToast('Loaded built-in iRAP coding dictionary (541 mappings)!', 'success');
+    showToast('iRAP dictionary loaded', 'success');
   }
 
   /**
@@ -822,10 +830,10 @@
       const filename = `${docName}.kmz`;
       triggerDownload(kmzBlob, filename);
 
-      showToast(`Downloaded ${filename} (${(kmzBlob.size / 1024).toFixed(1)} KB)!`, 'success', 4000);
+      showToast(`Downloaded ${filename}`, 'success', 4000);
     } catch (err) {
       console.error('KMZ generation failed:', err);
-      showToast(`KMZ generation failed: ${err.message}`, 'error', 5000);
+      showToast(`KMZ export failed: ${err.message}`, 'error', 5000);
     } finally {
       el.btnDownloadKmz.disabled = false;
       el.btnDownloadKmz.innerHTML = `
@@ -862,7 +870,7 @@
 
       const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml;charset=utf-8' });
       triggerDownload(blob, `${docName}.kml`);
-      showToast(`Downloaded ${docName}.kml!`, 'success');
+      showToast(`Downloaded ${docName}.kml`, 'success');
     } catch (err) {
       showToast(`KML export failed: ${err.message}`, 'error');
     }
@@ -875,7 +883,7 @@
       const jsonStr = JSON.stringify(state.converter.featureCollection, null, 2);
       const blob = new Blob([jsonStr], { type: 'application/geo+json;charset=utf-8' });
       triggerDownload(blob, `${docName}_enriched.geojson`);
-      showToast(`Downloaded ${docName}_enriched.geojson!`, 'success');
+      showToast('Downloaded GeoJSON', 'success');
     } catch (err) {
       showToast(`GeoJSON export failed: ${err.message}`, 'error');
     }
@@ -981,7 +989,7 @@
     // Also auto-apply the built-in iRAP dictionary
     applyBuiltinIrapDictionary();
     updateAttributeSelectors();
-    showToast('Loaded demo road survey dataset with 10 segments & iRAP dictionary!', 'success');
+    showToast('Demo data loaded', 'success');
   }
 
   /**
@@ -989,7 +997,7 @@
    */
   function downloadIrapDictCsv() {
     if (typeof window.IRAP_BUILTIN_DICTIONARY === 'undefined') {
-      showToast('Dictionary data not available.', 'error');
+      showToast('Dictionary unavailable', 'error');
       return;
     }
 
@@ -1002,7 +1010,7 @@
 
     const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
     triggerDownload(blob, 'irap_data_dictionary.csv');
-    showToast('Downloaded irap_data_dictionary.csv!', 'success');
+    showToast('Downloaded dictionary CSV', 'success');
   }
 
   /**
