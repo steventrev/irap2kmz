@@ -110,9 +110,9 @@
       // 3. Keyword fuzzy match
       if (ratingVal === null || ratingVal === undefined) {
         const kw = theme === 'motorcycle' ? ['motorcycle', 'motorcyclist']
-                 : theme === 'bicycle' ? ['bicycle', 'bicyclist']
-                 : theme === 'pedestrian' ? ['pedestrian']
-                 : ['vehicle'];
+          : theme === 'bicycle' ? ['bicycle', 'bicyclist']
+            : theme === 'pedestrian' ? ['pedestrian']
+              : ['vehicle'];
         for (const [k, v] of Object.entries(props)) {
           const norm = k.toLowerCase().replace(/[\s_]+/g, ' ').trim();
           if (kw.some(w => norm.includes(w)) && norm.includes('star rating') && norm.includes('raw')) {
@@ -690,7 +690,7 @@
   <Document>
     <name>${GeoConverter.escapeXml(documentName)}</name>
     <open>1</open>
-    <description><![CDATA[Exported with CSV/GeoJSON to KMZ Converter]]></description>
+    <description><![CDATA[Qk4 - irap2kmz]]></description>
 ${styles.join('\n')}
     <Folder>
       <name>Layers</name>
@@ -742,19 +742,19 @@ ${placemarks.join('\n')}
         case 'MultiLineString':
           return `<MultiGeometry>
         ${(geom.coordinates || []).map(line => {
-          const hasTwoUnique = line.length >= 2 && line.some((c, i) =>
-            i > 0 && (c[0] !== line[0][0] || c[1] !== line[0][1])
-          );
-          if (!hasTwoUnique && line.length > 0) {
-            return `<Point>
+            const hasTwoUnique = line.length >= 2 && line.some((c, i) =>
+              i > 0 && (c[0] !== line[0][0] || c[1] !== line[0][1])
+            );
+            if (!hasTwoUnique && line.length > 0) {
+              return `<Point>
           <coordinates>${coordString(line[0])}</coordinates>
         </Point>`;
-          }
-          return `<LineString>
+            }
+            return `<LineString>
           <tessellate>1</tessellate>
           <coordinates>${lineCoordString(line)}</coordinates>
         </LineString>`;
-        }).join('\n')}
+          }).join('\n')}
       </MultiGeometry>`;
 
         case 'Polygon':
