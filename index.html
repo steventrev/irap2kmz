@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iRAP to KMZ Converter</title>
+  <meta name="description"
+    content="Hostable web app to convert GeoJSON and CSV to KMZ with intelligent Data Dictionary categorical code replacement.">
+
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Leaflet CSS (Local with CDN fallback) -->
+  <link rel="stylesheet" href="vendor/leaflet.css">
+
+  <!-- Custom Design System -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo-group">
+        <div class="logo-icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <line x1="8" y1="2" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="22"></line>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 style="font-size: 1.25rem; font-weight: 700; margin: 0;">iRAP to KMZ</h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="theme-toggle-btn" class="btn btn-secondary btn-sm" title="Toggle dark/light theme"
+          aria-label="Toggle theme">
+          <span id="theme-icon">🌙</span> <span id="theme-text">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-main">
+
+    <!-- Quick Start Banner -->
+    <section class="sample-bar" aria-label="Quick Actions">
+      <div class="sample-bar-label">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span>Quick Start:</span>
+      </div>
+      <div class="sample-buttons">
+        <button id="load-demo-btn" class="btn btn-primary btn-sm">
+          ⚡ Load Demo
+        </button>
+        <button id="download-dict-csv-btn" class="btn btn-secondary btn-sm"
+          title="Download iRAP Coding Dictionary CSV">
+          📥 iRAP Dictionary CSV
+        </button>
+      </div>
+    </section>
+
+    <!-- Configuration Cards Grid -->
+    <div class="config-grid">
+
+      <!-- Step 1: Geospatial Data -->
+      <section class="card" id="card-geo-input">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span class="step-badge">1</span> Geospatial Input
+          </h2>
+          <span id="geo-status-badge" class="version-pill">Required</span>
+        </div>
+
+        <!-- Dropzone -->
+        <div id="geo-dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload geospatial file">
+          <div class="dropzone-icon">🗺️</div>
+          <div class="dropzone-text">Drop spatial data here</div>
+          <div class="dropzone-hint">GeoJSON or CSV (coordinates or WKT)</div>
+          <input type="file" id="geo-file-input" class="file-input" accept=".geojson,.json,.csv,.txt">
+        </div>
+
+        <!-- Loaded File Info -->
+        <div id="geo-loaded-banner" class="file-loaded-banner">
+          <div class="file-loaded-info">
+            <span class="file-badge" id="geo-file-type-badge">CSV</span>
+            <span id="geo-file-name" style="font-weight: 600;">data.csv</span>
+          </div>
+          <button id="geo-remove-btn" class="btn btn-ghost btn-sm" title="Remove file">✕</button>
+        </div>
+
+        <!-- CSV Geometry Configuration (Hidden until CSV loaded) -->
+        <div id="csv-geo-settings" class="settings-group" style="display: none;">
+          <div class="setting-row">
+            <label class="setting-label">Export Geometry Mode:</label>
+            <div class="radio-group">
+              <div class="radio-pill">
+                <input type="radio" id="mode-linestring" name="csv-geom-mode" value="linestring" checked>
+                <label for="mode-linestring">Line Segments (Start → End)</label>
+              </div>
+              <div class="radio-pill">
+                <input type="radio" id="mode-point-start" name="csv-geom-mode" value="point_start">
+                <label for="mode-point-start">Points (Start)</label>
+              </div>
+              <div class="radio-pill">
+                <input type="radio" id="mode-point-end" name="csv-geom-mode" value="point_end">
+                <label for="mode-point-end">Points (End)</label>
+              </div>
+              <div class="radio-pill" id="mode-wkt-wrap" style="display: none;">
+                <input type="radio" id="mode-wkt" name="csv-geom-mode" value="wkt">
+                <label for="mode-wkt">WKT Geometry</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coordinate Selectors -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <div class="setting-row">
+              <label class="setting-label" for="select-lat">Start Latitude:</label>
+              <select id="select-lat" class="form-select"></select>
+            </div>
+            <div class="setting-row">
+              <label class="setting-label" for="select-lon">Start Longitude:</label>
+              <select id="select-lon" class="form-select"></select>
+            </div>
+            <div class="setting-row" id="wrap-end-lat">
+              <label class="setting-label" for="select-end-lat">End Latitude:</label>
+              <select id="select-end-lat" class="form-select"></select>
+            </div>
+            <div class="setting-row" id="wrap-end-lon">
+              <label class="setting-label" for="select-end-lon">End Longitude:</label>
+              <select id="select-end-lon" class="form-select"></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Geo Stats Summary -->
+        <div id="geo-stats" class="stats-banner" style="display: none;">
+          <div class="stat-box">
+            <div class="stat-val" id="stat-features">0</div>
+            <div class="stat-label">Features</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="stat-geom-type">-</div>
+            <div class="stat-label">Geometry</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="stat-properties">0</div>
+            <div class="stat-label">Attributes</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Data Dictionary -->
+      <section class="card" id="card-dictionary">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span class="step-badge">2</span> Data Dictionary
+          </h2>
+          <span class="version-pill" style="border-color: rgba(16,185,129,0.4); color: var(--success);">Optional</span>
+        </div>
+
+        <!-- Dropzone -->
+        <div id="dict-dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload data dictionary CSV">
+          <div class="dropzone-icon">📖</div>
+          <div class="dropzone-text">Drop Dictionary CSV here</div>
+          <div class="dropzone-hint">Maps codes to category definitions</div>
+          <input type="file" id="dict-file-input" class="file-input" accept=".csv,.txt">
+        </div>
+
+        <!-- Quick 1-click Preset Option -->
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button id="apply-irap-preset-btn" class="btn btn-secondary btn-sm"
+            style="flex: 1; border-color: rgba(59,130,246,0.4);">
+            ⚡ Use Built-in iRAP Dictionary
+          </button>
+        </div>
+
+        <!-- Loaded Dict Info -->
+        <div id="dict-loaded-banner" class="file-loaded-banner">
+          <div class="file-loaded-info">
+            <span class="file-badge" style="background: var(--accent);">DICT</span>
+            <span id="dict-file-name" style="font-weight: 600;">iRAP Dictionary</span>
+          </div>
+          <button id="dict-remove-btn" class="btn btn-ghost btn-sm" title="Remove dictionary">✕</button>
+        </div>
+
+        <!-- Dictionary Column Detection Settings (Hidden unless custom CSV) -->
+        <div id="dict-col-settings" class="settings-group" style="display: none;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;">
+            <div class="setting-row">
+              <label class="setting-label" for="select-dict-field">Field Column:</label>
+              <select id="select-dict-field" class="form-select"></select>
+            </div>
+            <div class="setting-row">
+              <label class="setting-label" for="select-dict-code">Code Column:</label>
+              <select id="select-dict-code" class="form-select"></select>
+            </div>
+            <div class="setting-row">
+              <label class="setting-label" for="select-dict-desc">Label Column:</label>
+              <select id="select-dict-desc" class="form-select"></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dict Stats -->
+        <div id="dict-stats" class="stats-banner" style="display: none;">
+          <div class="stat-box">
+            <div class="stat-val" id="stat-dict-entries">0</div>
+            <div class="stat-label">Rules Loaded</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="stat-dict-fields">0</div>
+            <div class="stat-label">Fields Mapped</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-val" id="stat-dict-replacements" style="color: var(--accent);">0</div>
+            <div class="stat-label">Values Replaced</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: KMZ Styling & Preferences -->
+      <section class="card" id="card-styling">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span class="step-badge">3</span> KMZ Configuration
+          </h2>
+          <span class="version-pill">Options</span>
+        </div>
+
+        <div class="settings-group">
+          <!-- Placemark Title Selector -->
+          <div class="setting-row">
+            <label class="setting-label" for="select-title-field">Placemark Title:</label>
+            <select id="select-title-field" class="form-select">
+              <option value="">(Auto-detect)</option>
+            </select>
+          </div>
+
+          <!-- Color Mode -->
+          <div class="setting-row">
+            <label class="setting-label">Color Mode:</label>
+            <div class="radio-group">
+              <div class="radio-pill">
+                <input type="radio" id="color-irap" name="color-mode" value="irap_stars" checked>
+                <label for="color-irap">⭐ iRAP Stars</label>
+              </div>
+              <div class="radio-pill">
+                <input type="radio" id="color-categorical" name="color-mode" value="categorical">
+                <label for="color-categorical">🎨 Attribute</label>
+              </div>
+              <div class="radio-pill">
+                <input type="radio" id="color-single" name="color-mode" value="single">
+                <label for="color-single">🖌️ Single</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Categorical Attribute Selector (hidden if not categorical) -->
+          <div class="setting-row" id="wrap-categorical-field" style="display: none;">
+            <label class="setting-label" for="select-color-field">Color by Attribute:</label>
+            <select id="select-color-field" class="form-select"></select>
+          </div>
+
+          <!-- Single Color Picker (hidden if not single) -->
+          <div class="setting-row" id="wrap-single-color" style="display: none;">
+            <label class="setting-label" for="input-single-color">Theme Color:</label>
+            <input type="color" id="input-single-color" class="form-input" value="#3b82f6"
+              style="height: 38px; cursor: pointer;">
+          </div>
+
+          <!-- Geometry Width / ExtendedData -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="setting-row">
+              <label class="setting-label" for="slider-line-width">Line Width: <span
+                  id="label-line-width">4px</span></label>
+              <input type="range" id="slider-line-width" min="1" max="10" value="4" class="form-input"
+                style="padding: 0.2rem 0;">
+            </div>
+            <div class="setting-row" style="justify-content: flex-end;">
+              <label
+                style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; cursor: pointer; color: var(--text-muted);">
+                <input type="checkbox" id="check-extended-data" checked>
+                Include ExtendedData table
+              </label>
+            </div>
+          </div>
+
+          <!-- Document Name -->
+          <div class="setting-row">
+            <label class="setting-label" for="input-doc-name">Filename:</label>
+            <input type="text" id="input-doc-name" class="form-input" value="geospatial_export">
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Export Action Banner -->
+    <section class="export-card" id="export-section">
+      <div class="export-actions">
+        <button id="btn-download-kmz" class="btn btn-primary btn-lg" disabled>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Download KMZ
+        </button>
+        <button id="btn-download-kml" class="btn btn-secondary" disabled title="Download uncompressed KML file">
+          Download KML
+        </button>
+        <button id="btn-download-geojson" class="btn btn-secondary" disabled
+          title="Download GeoJSON with replaced definitions">
+          Download GeoJSON
+        </button>
+      </div>
+    </section>
+
+    <!-- Interactive Preview Area -->
+    <section class="preview-section" id="preview-section">
+      <div class="preview-nav">
+        <div class="tabs-list" role="tablist">
+          <button class="tab-btn active" id="tab-map-btn" role="tab" aria-selected="true" aria-controls="tab-map">
+            🗺️ Map
+          </button>
+          <button class="tab-btn" id="tab-table-btn" role="tab" aria-selected="false" aria-controls="tab-table">
+            📊 Table
+          </button>
+          <button class="tab-btn" id="tab-diff-btn" role="tab" aria-selected="false" aria-controls="tab-diff">
+            🔄 Diff
+          </button>
+        </div>
+        <div id="map-legend"
+          style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+          <span>iRAP Legend:</span>
+          <span style="color: #212121; font-weight: bold; background: #e2e8f0; padding: 1px 4px; border-radius: 3px;">1★
+            Black</span>
+          <span style="color: #E53935; font-weight: bold;">2★ Red</span>
+          <span style="color: #FB8C00; font-weight: bold;">3★ Orange</span>
+          <span style="color: #FDD835; font-weight: bold;">4★ Yellow</span>
+          <span style="color: #43A047; font-weight: bold;">5★ Green</span>
+        </div>
+      </div>
+
+      <!-- Tab 1: Interactive Map -->
+      <div id="tab-map" class="tab-content active" role="tabpanel">
+        <div id="map-container">
+          <div class="map-placeholder" id="map-placeholder">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="m4.93 4.93 4.24 4.24"></path>
+              <path d="m14.83 9.17 4.24-4.24"></path>
+              <path d="m14.83 14.83 4.24 4.24"></path>
+              <path d="m9.17 14.83-4.24 4.24"></path>
+              <circle cx="12" cy="12" r="4"></circle>
+            </svg>
+            <p>Upload data or click Load Demo to preview features.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Data Table -->
+      <div id="tab-table" class="tab-content" role="tabpanel">
+        <div class="table-toolbar">
+          <div class="search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="table-search" class="search-input" placeholder="Search attributes...">
+          </div>
+          <div class="pagination-controls">
+            <button id="prev-page-btn" class="btn btn-secondary btn-sm" disabled>&lt; Prev</button>
+            <span id="page-indicator">Page 1 of 1</span>
+            <button id="next-page-btn" class="btn btn-secondary btn-sm" disabled>Next &gt;</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="data-table">
+            <thead>
+              <tr id="table-head-row">
+                <th>#</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                  No data loaded yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 3: Dictionary Diff -->
+      <div id="tab-diff" class="tab-content" role="tabpanel">
+        <div id="diff-summary-container" class="diff-container">
+          <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: var(--text-muted);">
+            Load a data dictionary to preview code replacements.
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div>
+        <strong>Contact:</strong> <a href="mailto:strevino@qk4.com">strevino@qk4.com</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <!-- Local Libraries with CDN Fallbacks -->
+  <script src="vendor/papaparse.min.js"></script>
+  <script>
+    if (typeof Papa === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"><\/script>');
+    }
+  </script>
+
+  <script src="vendor/jszip.min.js"></script>
+  <script>
+    if (typeof JSZip === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"><\/script>');
+    }
+  </script>
+
+  <script src="vendor/leaflet.js"></script>
+  <script>
+    if (typeof L === 'undefined') {
+      document.write('<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>');
+    }
+  </script>
+
+  <!-- App Core Modules -->
+  <script src="js/config.js"></script>
+  <script src="js/irap-dictionary.js"></script>
+  <script src="js/data-dictionary.js"></script>
+  <script src="js/geo-converter.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,49 @@
+name: Deploy Geo2KMZ to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Inject CARTO API Key Config (if secret provided)
+        shell: bash
+        env:
+          CARTO_API_KEY: ${{ secrets.CARTO_API_KEY }}
+        run: |
+          if [ -n "$CARTO_API_KEY" ]; then
+            echo "window.APP_CONFIG = { cartoApiKey: '$CARTO_API_KEY' };" > js/config.js
+            echo "Generated js/config.js from repository secret."
+          fi
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
