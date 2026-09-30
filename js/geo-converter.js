@@ -52,15 +52,15 @@
     }
 
     /**
-     * Standard ViDA Star Rating color definitions
+     * ViDA Star Rating color definitions (Optimized for high contrast on satellite imagery)
      */
     static STAR_COLORS = Object.freeze({
-      5: '#2C742C', // 5 Stars: ViDA Green
-      4: '#818139', // 4 Stars: ViDA Olive
-      3: '#BE9646', // 3 Stars: ViDA Amber
-      2: '#921D1B', // 2 Stars: ViDA Crimson Red
+      5: '#22C55E', // 5 Stars: Vivid Green
+      4: '#84CC16', // 4 Stars: Vivid Lime / Yellow-Green
+      3: '#EAB308', // 3 Stars: Vivid Amber / Golden Yellow
+      2: '#F97316', // 2 Stars: Vivid Safety Orange
       1: '#000000', // 1 Star: ViDA Black
-      na: '#3F4344' // Not applicable: ViDA Slate Gray
+      na: '#64748B' // Not applicable: Slate Gray
     });
 
     /**
@@ -80,7 +80,7 @@
      * @param {string} fallbackColor - Hex color to return if no rating or theme is 'none'
      * @returns {string} Hex color string (#RRGGBB)
      */
-    static getStarRatingColor(feature, theme = 'vehicle', fallbackColor = '#3F4344') {
+    static getStarRatingColor(feature, theme = 'vehicle', fallbackColor = '#2563EB') {
       if (!theme || theme === 'none') return fallbackColor;
 
       const props = (feature && feature.properties) ? feature.properties : (feature || {});
@@ -544,7 +544,7 @@
         colorMode = 'irap_stars', // 'irap_stars', 'categorical', 'single'
         colorField = null,
         singleColor = '#2563EB',
-        lineWidth = 4,
+        lineWidth = 5,
         pointRadius = 1.0,
         includeExtendedData = true
       } = options;

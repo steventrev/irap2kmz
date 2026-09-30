@@ -29,7 +29,7 @@
     pageSize: 50,
     replacedFieldsSet: new Set(),
     exportBaseName: 'geospatial_export',
-    selectedLineColor: '#3F4344'
+    selectedLineColor: '#2563EB'
   };
 
   // DOM Elements Cache
@@ -291,8 +291,8 @@
     if (!fc.features || fc.features.length === 0) return;
 
     const starTheme = getSelectedRadioValue('star-theme') || 'vehicle';
-    const singleColor = state.selectedLineColor || '#3F4344';
-    const lineWidth = parseInt(el.sliderLineWidth.value, 10) || 4;
+    const singleColor = state.selectedLineColor || '#2563EB';
+    const lineWidth = parseInt(el.sliderLineWidth.value, 10) || 5;
 
     const getFeatureColor = (feature) => GeoConverter.getStarRatingColor(feature, starTheme, singleColor);
 
@@ -896,7 +896,7 @@
 
       const docName = state.exportBaseName || 'geospatial_export';
       const starTheme = getSelectedRadioValue('star-theme') || 'vehicle';
-      const lineWidth = parseInt(el.sliderLineWidth.value, 10) || 4;
+      const lineWidth = parseInt(el.sliderLineWidth.value, 10) || 5;
       const titleField = state.converter.detectTitleField();
       const includeExtendedData = true;
 
@@ -904,7 +904,7 @@
         documentName: docName,
         titleField: titleField,
         colorMode: starTheme,
-        singleColor: state.selectedLineColor || '#3F4344',
+        singleColor: state.selectedLineColor || '#2563EB',
         lineWidth: lineWidth,
         includeExtendedData: includeExtendedData
       });
@@ -935,7 +935,7 @@
     try {
       const docName = state.exportBaseName || 'geospatial_export';
       const starTheme = getSelectedRadioValue('star-theme') || 'vehicle';
-      const lineWidth = parseInt(el.sliderLineWidth.value, 10) || 4;
+      const lineWidth = parseInt(el.sliderLineWidth.value, 10) || 5;
       const titleField = state.converter.detectTitleField();
       const includeExtendedData = true;
 
@@ -943,7 +943,7 @@
         documentName: docName,
         titleField: titleField,
         colorMode: starTheme,
-        singleColor: state.selectedLineColor || '#3F4344',
+        singleColor: state.selectedLineColor || '#2563EB',
         lineWidth: lineWidth,
         includeExtendedData: includeExtendedData
       });

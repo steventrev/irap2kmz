@@ -106,11 +106,20 @@ async function test() {
   const testFeature1 = {
     properties: { 'Vehicle Star Rating Raw': '1' }
   };
+  const testFeature4 = { properties: { 'Vehicle Star Rating Raw': '4 star' } };
+  const testFeature3 = { properties: { 'Vehicle Star Rating Raw': '3 star' } };
+  const testFeature2 = { properties: { 'Vehicle Star Rating Raw': '2 star' } };
   const color5 = GeoConverter.getStarRatingColor(testFeature5, 'vehicle');
+  const color4 = GeoConverter.getStarRatingColor(testFeature4, 'vehicle');
+  const color3 = GeoConverter.getStarRatingColor(testFeature3, 'vehicle');
+  const color2 = GeoConverter.getStarRatingColor(testFeature2, 'vehicle');
   const color1 = GeoConverter.getStarRatingColor(testFeature1, 'vehicle');
-  console.log('Resolved 5 star color:', color5, '(expected #2C742C)');
+  console.log('Resolved 5 star color:', color5, '(expected #22C55E)');
+  console.log('Resolved 4 star color:', color4, '(expected #84CC16)');
+  console.log('Resolved 3 star color:', color3, '(expected #EAB308)');
+  console.log('Resolved 2 star color:', color2, '(expected #F97316)');
   console.log('Resolved 1 star color:', color1, '(expected #000000)');
-  if (color5 !== '#2C742C' || color1 !== '#000000') {
+  if (color5 !== '#22C55E' || color4 !== '#84CC16' || color3 !== '#EAB308' || color2 !== '#F97316' || color1 !== '#000000') {
     throw new Error('Star rating color resolution test failed');
   }
 
@@ -118,6 +127,12 @@ async function test() {
   console.log('Detected themes in sample road survey:', themes);
   if (!themes.vehicle) {
     throw new Error('Expected sample road survey to have vehicle star rating theme');
+  }
+
+  const colorNoneDefault = GeoConverter.getStarRatingColor(testFeature5, 'none');
+  console.log('Resolved none theme default color:', colorNoneDefault, '(expected #2563EB)');
+  if (colorNoneDefault !== '#2563EB') {
+    throw new Error(`Expected default line color for theme 'none' to be #2563EB, got ${colorNoneDefault}`);
   }
 
   console.log('\nALL TESTS PASSED!');
